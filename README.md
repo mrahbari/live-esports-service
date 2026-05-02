@@ -78,6 +78,15 @@ The API is available at `http://localhost:8080`. Use `Ctrl+C` or `./scripts/stop
 
 ---
 
+## Postman Collection
+
+For a quick way to explore the API, import the provided collection into Postman:
+- **File:** [`postman collection`](postman-collection/abios-case-study.postman_collection.json)
+
+It includes pre-configured requests for all live endpoints, health checks, and Prometheus metrics.
+
+---
+
 ## Service URLs
 
 After `./scripts/run.sh` or `./scripts/run-atlas.sh`:
@@ -185,7 +194,7 @@ Powered by **Resilience4j** and **Java 21 Loom**:
 
 ---
 
-## Production Readiness Score
+## Readiness Score
 
 | Category | Score | Status |
 |---|---|---|
@@ -219,7 +228,7 @@ Powered by **Resilience4j** and **Java 21 Loom**:
 
 This section is optional transparency for portfolio context: how much of the work was produced with an AI coding assistant, and what was done to own the result.
 
-**Tool used:** Claude Code (Anthropic) — iterative prompting, reviewed and adjusted by the author.
+**Tool used:** Cursor + Gemini — iterative prompting, reviewed and adjusted by the author.
 
 | Area | Approx. % AI-assisted | Role |
 |---|-----------------------|---|
@@ -229,3 +238,14 @@ This section is optional transparency for portfolio context: how much of the wor
 | `scripts/` | ~30%                  | Generated then hardened manually |
 | `docs/` | ~50%                  | Drafted by AI; reviewed and trimmed |
 | `README.md` | ~30%                  | Structure from sample; content authored and curated |
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/pic1-live-series.jpg" width="300" alt="Live Series">
+  <img src="docs/screenshots/pic2-live-teams.jpg" width="300" alt="Live Teams">
+  <img src="docs/screenshots/pic3-live-players.jpg" width="300" alt="Live Players">
+</p>
+

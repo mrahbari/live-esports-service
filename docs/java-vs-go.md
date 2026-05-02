@@ -175,8 +175,7 @@ func (c *ResilientClient) FetchSeries(ctx context.Context, take, skip int) (*Enr
 
 **Trade-off**: Java's annotation approach is zero-boilerplate but invisible — you can't see the
 policy at the call site. Go's explicit wiring is 15 more lines but instantly readable and testable
-without Spring AOP. In an interview, say: "I'd prefer the Go version for a new service because
-the resilience contract is part of the code, not hidden in YAML."
+without Spring AOP."
 
 ---
 
@@ -328,51 +327,3 @@ No profiles needed — just environment variables. Simpler for containers.
 | Memory efficiency | Goroutine stack starts at 2 KB vs JVM thread overhead; serving 1000 concurrent requests costs far less RAM |
 | Resilience visibility | Retry/circuit-breaker logic is explicit code, not annotation-driven magic — easier to test and reason about |
 
----
-
-## 6. Interview Talking Points
-
-### Justifying Java
-
-> "I chose Java because I already had the domain model defined and Spring Boot let me stand up
-> observability (Micrometer, ECS logging, health probes), resilience (Resilience4j), and caching
-> (Caffeine/Redis) in a single weekend without reinventing primitives. Java 21 virtual threads
-> close the concurrency gap with Go for I/O-heavy workloads like this."
-
-### Demonstrating Go awareness
-
-> "In Go I would replace `CompletableFuture.allOf` with an `errgroup.Group` — same fan-out
-> semantics, but any goroutine error automatically cancels the rest via context. The Resilience4j
-> annotations become explicit middleware functions: a rate limiter wrapping a circuit breaker
-> wrapping a retry loop. More lines, but every policy is visible at the call site."
-
-> "The cache's `AtomicBoolean.compareAndSet` and `synchronized` block map directly to
-> `atomic.Bool.CompareAndSwap` and `sync.Mutex`. The pattern is identical; Go's version is just
-> half the code."
-
-> "Go's `context.Context` is the killer feature for this service. Every upstream call gets a shared
-> deadline automatically. In Java I'd need to configure `RestClient` timeouts per-builder and
-> propagate `CompletableFuture` cancellation manually."
-
-### Migration path (if asked)
-
-> "I'd migrate layer by layer. First, replace the Spring HTTP server with a Go `net/http` +
-> Chi/Echo router — the endpoints are simple GET handlers with no framework-specific logic.
-> Second, port the cache (direct translation: `sync.RWMutex` + pointer swap). Third, port the
-> Abios gateway — the error taxonomy maps one-to-one to Go sentinel error types. The Resilience4j
-> annotations become three wrapper functions. The whole service would be ~800 lines of Go vs
-> ~1500 lines of Java, with a 10× smaller container image and sub-second startup."
-
-### Key phrases that impress
-
-- "Go's error-as-value model forces explicit handling at every call site — that's a feature, not a
-  limitation. The Java exception hierarchy papers over the same requirement."
-- "Goroutines are not threads; the scheduler multiplexes millions of them onto OS threads.
-  Java 21 virtual threads reach for the same model but still sit on top of the JVM."
-- "For a stateless, I/O-bound read service like this one, Go's binary size, startup time, and
-  memory profile are objectively better. The Java ecosystem advantage (Spring, Jackson, Resilience4j)
-  is real but front-loaded — it pays off in large teams and complex domains, not in a single-service
-  case study."
-- "I chose Java to move fast given my familiarity. I am confident I could rewrite this in Go in
-  under a week because the architecture is already separated into layers that map cleanly to Go
-  packages: `gateway`, `cache`, `aggregator`, `handler`."

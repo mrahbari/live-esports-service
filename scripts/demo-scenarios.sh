@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # demonstration script for technical scenarios and architectural limitations.
-# Use this during your interview to show how the system handles the Atlas V3 Sandbox constraints.
 
 set -euo pipefail
 

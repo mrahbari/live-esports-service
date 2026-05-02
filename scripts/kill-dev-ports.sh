@@ -14,6 +14,17 @@ fi
 echo "==> Freeing port(s): ${PORTS[*]}"
 
 for p in "${PORTS[@]}"; do
+  # Stop any Docker container (from any project) that is binding this port.
+  # Docker allocates ports inside its own daemon; fuser/lsof cannot see them.
+  container_ids="$(docker ps --format '{{.ID}} {{.Ports}}' 2>/dev/null \
+    | grep -E "0\.0\.0\.0:${p}->|:::${p}->" \
+    | awk '{print $1}' || true)"
+  if [[ -n "${container_ids}" ]]; then
+    echo "    Stopping Docker container(s) on port ${p}: ${container_ids}"
+    # shellcheck disable=SC2086
+    docker stop ${container_ids} 2>/dev/null || true
+  fi
+
   # Special handling for Redis if it's a system service
   if [[ "$p" == "6379" ]]; then
     if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet redis-server; then
