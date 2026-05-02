@@ -1,0 +1,982 @@
+{
+  "info": {
+    "_postman_id": "9f73b909-d7aa-4298-a4fb-1a3ea26a029f",
+    "name": "Abios Case Study — Live API",
+    "description": "Spring Boot live-esports API — exercise every public endpoint and probes.\n\n## Before you send requests\n1. Start the app: `bash ./scripts/run.sh` (default **classpath mock**, port **8080**) or Atlas: `bash ./scripts/run-atlas.sh` (same as `SPRING_PROFILES_ACTIVE=atlas` + `run.sh`) with `ABIOS_API_KEY`.\n2. Optional full bash sweep (needs curl): `bash ./scripts/run-full-api-verification.sh`.\n\n## Mock vs live\n| Mode | How you know |\n|------|----------------|\n| **Classpath mock** | JSON includes `seriesId` **ser-1001**, player **pl-501**, team **team-1** (from `src/main/resources/abios-mock/series-live.json`). No upstream HTTP. |\n| **Atlas / file mock** | Different IDs; set collection variable `expectMockData` = `false` so optional fingerprint tests are skipped. |\n\n## Variables\n- `baseUrl` — e.g. `http://localhost:8080`\n- `expectMockData` — `true` when using default mock (default); `false` for real Atlas.\n- `testClientIp` — `X-Forwarded-For` hop for an isolated rate-limit bucket (RFC 5737 doc space).\n\n## Rate limits\nPer-IP Bucket4j. For 429 + `Retry-After`, run **Collection Runner** on *Live data* with delay 0 until over limit, or use folder *Rate limiting*.\n\n## Pagination\nAll three live endpoints support optional `skip` and `take` query params for client-side pagination over the in-memory snapshot. Omitting them returns the full list (backwards-compatible).\n\n**Shape:** `{ \"meta\": { fetchedAt, stale, degraded, count, total, skip, take, hasMore }, \"items\": [...] }`. Errors: RFC 7807 where applicable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "2896116",
+    "_collection_link": "https://go.postman.co/collection/2896116-9f73b909-d7aa-4298-a4fb-1a3ea26a029f?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Live data",
+      "item": [
+        {
+          "name": "GET /v1/series/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON has meta and items\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"meta\");",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j.meta).to.have.property(\"fetchedAt\");",
+                  "    pm.expect(j.meta).to.have.property(\"stale\");",
+                  "    pm.expect(j.meta).to.have.property(\"degraded\");",
+                  "    pm.expect(j.meta).to.have.property(\"count\");",
+                  "    pm.expect(j.meta).to.have.property(\"total\");",
+                  "    pm.expect(j.meta).to.have.property(\"skip\");",
+                  "    pm.expect(j.meta).to.have.property(\"take\");",
+                  "    pm.expect(j.meta).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "    pm.expect(j.meta.total).to.be.at.least(j.meta.count);",
+                  "});",
+                  "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
+                  "    pm.test(\"Classpath mock fingerprint (series ser-1001)\", () => {",
+                  "        const j = pm.response.json();",
+                  "        const ids = j.items.map(i => i.seriesId);",
+                  "        pm.expect(ids).to.include(\"ser-1001\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": "Items to skip (0-based offset). Omit to return all.",
+                  "disabled": true
+                },
+                {
+                  "key": "take",
+                  "value": "10",
+                  "description": "Max items to return. Omit or set to 0 to return all.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Aggregated live series list from cached upstream snapshot. Supports optional `skip`/`take` for client-side pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/players/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON has meta and items\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"meta\");",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j.meta).to.have.property(\"count\");",
+                  "    pm.expect(j.meta).to.have.property(\"total\");",
+                  "    pm.expect(j.meta).to.have.property(\"skip\");",
+                  "    pm.expect(j.meta).to.have.property(\"take\");",
+                  "    pm.expect(j.meta).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "});",
+                  "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
+                  "    pm.test(\"Classpath mock fingerprint (player pl-501)\", () => {",
+                  "        const j = pm.response.json();",
+                  "        const ids = j.items.map(i => i.playerId);",
+                  "        pm.expect(ids).to.include(\"pl-501\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "players",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": "Items to skip (0-based offset). Omit to return all.",
+                  "disabled": true
+                },
+                {
+                  "key": "take",
+                  "value": "10",
+                  "description": "Max items to return. Omit or set to 0 to return all.",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/teams/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON has meta and items\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"meta\");",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j.meta).to.have.property(\"count\");",
+                  "    pm.expect(j.meta).to.have.property(\"total\");",
+                  "    pm.expect(j.meta).to.have.property(\"skip\");",
+                  "    pm.expect(j.meta).to.have.property(\"take\");",
+                  "    pm.expect(j.meta).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "});",
+                  "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
+                  "    pm.test(\"Classpath mock fingerprint (team team-1)\", () => {",
+                  "        const j = pm.response.json();",
+                  "        const ids = j.items.map(i => i.teamId);",
+                  "        pm.expect(ids).to.include(\"team-1\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/teams/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "teams",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": "Items to skip (0-based offset). Omit to return all.",
+                  "disabled": true
+                },
+                {
+                  "key": "take",
+                  "value": "10",
+                  "description": "Max items to return. Omit or set to 0 to return all.",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/series/live (with X-Request-Id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response echoes X-Request-Id\", () => {",
+                  "    const sent = pm.request.headers.get(\"X-Request-Id\");",
+                  "    const echo = pm.response.headers.get(\"X-Request-Id\");",
+                  "    pm.expect(echo).to.eql(sent);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$guid}}",
+                "description": "Optional; server generates one if omitted. Response includes same header.",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Public GET endpoints protected by per-IP rate limiting and request ID propagation."
+    },
+    {
+      "name": "Health & actuator",
+      "item": [
+        {
+          "name": "GET /actuator/health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Body has status\", () => {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"status\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /actuator/health/liveness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"status UP\", () => pm.expect(pm.response.json().status).to.eql(\"UP\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/liveness",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "liveness"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /actuator/health/readiness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"status UP\", () => pm.expect(pm.response.json().status).to.eql(\"UP\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/readiness",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "readiness"
+              ]
+            },
+            "description": "Includes custom `abiosCache` group when configured."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /actuator/info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /actuator/metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has names\", () => pm.expect(pm.response.json()).to.have.property(\"names\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "metrics"
+              ]
+            },
+            "description": "Lists available metric names. Use `/actuator/metrics/{name}` for a single meter."
+          },
+          "response": []
+        }
+      ],
+      "description": "Spring Boot Actuator: probes for orchestrators and basic service metadata."
+    },
+    {
+      "name": "Rate limiting",
+      "item": [
+        {
+          "name": "GET /v1/series/live (X-Forwarded-For = testClientIp)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 429) {",
+                  "    pm.test(\"Retry-After present\", () => pm.expect(pm.response.headers.get(\"Retry-After\")).to.exist);",
+                  "} else {",
+                  "    pm.test(\"Status 200 when under limit\", () => pm.response.to.have.status(200));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "{{testClientIp}}",
+                "description": "Uses a separate token bucket from your default client IP.",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "`IpRateLimitFilter` keys buckets by client IP (`X-Forwarded-For` first hop, else socket address).\n\nSet collection variable `testClientIp` to simulate another client without changing your machine.\n\nTo see HTTP 429 with `Retry-After`, run **GET /series/live** repeatedly (Collection Runner, delay 0 ms) until the bucket is empty."
+    },
+    {
+      "name": "Pagination",
+      "item": [
+        {
+          "name": "GET /v1/series/live — page 1 (take=1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Page 1: skip=0, take=1\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.meta.skip).to.eql(0);",
+                  "    pm.expect(j.meta.take).to.eql(1);",
+                  "    pm.expect(j.items.length).to.be.at.most(1);",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "    pm.expect(j.meta.total).to.be.a('number');",
+                  "    // store total for cross-request assertions",
+                  "    pm.collectionVariables.set(\"_paginationTotal\", j.meta.total);",
+                  "    pm.collectionVariables.set(\"_paginationHasMore\", j.meta.hasMore);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live?skip=0&take=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "take",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "First page: 1 item. `meta.hasMore=true` if more series exist in the snapshot."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/series/live — page 2 (skip=1, take=1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Page 2: skip=1, take=1\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.meta.skip).to.eql(1);",
+                  "    pm.expect(j.meta.take).to.eql(1);",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "    const total = pm.collectionVariables.get(\"_paginationTotal\");",
+                  "    if (total !== undefined && Number(total) > 1) {",
+                  "        pm.expect(j.items.length).to.eql(1);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live?skip=1&take=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "1"
+                },
+                {
+                  "key": "take",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Second page. Returns empty items[] if the snapshot had only 1 series."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/series/live — skip beyond end",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Skip beyond end returns empty items, hasMore=false\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.items).to.be.an('array').that.is.empty;",
+                  "    pm.expect(j.meta.count).to.eql(0);",
+                  "    pm.expect(j.meta.hasMore).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live?skip=99999&take=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "series",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "99999"
+                },
+                {
+                  "key": "take",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Edge case: skip past the end. Expects empty items and hasMore=false."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/players/live — page 1 (take=5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Pagination meta is consistent\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.meta.skip).to.eql(0);",
+                  "    pm.expect(j.meta.take).to.eql(5);",
+                  "    pm.expect(j.items.length).to.be.at.most(5);",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "    pm.expect(j.meta.hasMore).to.eql(j.meta.total > 5);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live?skip=0&take=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "players",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "take",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v1/teams/live — page 1 (take=5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Pagination meta is consistent\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.meta.skip).to.eql(0);",
+                  "    pm.expect(j.meta.take).to.eql(5);",
+                  "    pm.expect(j.items.length).to.be.at.most(5);",
+                  "    pm.expect(j.meta.count).to.eql(j.items.length);",
+                  "    pm.expect(j.meta.hasMore).to.eql(j.meta.total > 5);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/teams/live?skip=0&take=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "teams",
+                "live"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "take",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Demonstrates client-side pagination over the in-memory snapshot.\n\nAll live endpoints accept `skip` (0-based offset) and `take` (page size). Omitting both returns the full list — backwards compatible.\n\nPagination is applied in-memory after cache warm; zero upstream calls are made per page request."
+    },
+    {
+      "name": "Abios Atlas Direct (Issues & Blockers)",
+      "item": [
+        {
+          "name": "1. Thin Payloads (Missing Names)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "{{abiosAuthHeader2}}",
+                "value": "{{abiosApiKey}}",
+                "description": "{{abiosAuthValue}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}",
+              "host": [
+                "{{abiosBaseUrl2}}"
+              ],
+              "path": [
+                "v3",
+                "series"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "lifecycle<={live,ongoing}"
+                }
+              ]
+            },
+            "description": "Demonstrates that the standard `/series` endpoint returns `roster_id` but NO names for teams or players.\n\n**Blocker:** Without enrichment, the UI would show empty strings or raw IDs only."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Ignored Deep Includes (Sandbox Blocker)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "{{abiosAuthHeader2}}",
+                "value": "{{abiosApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}&include=participants.roster.team.name,participants.roster.players.player.nick",
+              "host": [
+                "{{abiosBaseUrl2}}"
+              ],
+              "path": [
+                "v3",
+                "series"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "lifecycle<={live,ongoing}"
+                },
+                {
+                  "key": "include",
+                  "value": "participants.roster.team.name,participants.roster.players.player.nick"
+                }
+              ]
+            },
+            "description": "Attempting to use `include` to solve the N+1 problem.\n\n**Blocker:** In the Sandbox tier, these deep includes are often ignored, still returning thin payloads. This forced us to implement the 'Enrichment' strategy."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Bulk Fetching Limitation (Ignored Filters)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "{{abiosAuthHeader2}}",
+                "value": "{{abiosApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{abiosBaseUrl2}}/v3/rosters?id=123,456,789",
+              "host": [
+                "{{abiosBaseUrl2}}"
+              ],
+              "path": [
+                "v3",
+                "rosters"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "123,456,789",
+                  "description": "Example IDs"
+                }
+              ]
+            },
+            "description": "Attempting to fetch multiple rosters in one request.\n\n**Blocker:** Sandbox frequently ignores the `id` CSV list and returns a default page of data, making bulk hydration unreliable."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Rate Limit (429) Proof",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "{{abiosAuthHeader2}}",
+                "value": "{{abiosApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{abiosBaseUrl2}}/v3/rosters/148669",
+              "host": [
+                "{{abiosBaseUrl2}}"
+              ],
+              "path": [
+                "v3",
+                "rosters",
+                "148669"
+              ]
+            },
+            "description": "Run this request rapidly (e.g., using the Collection Runner with 100 iterations and 0ms delay).\n\n**Blocker:** Direct Abios Sandbox access is strictly limited. Parallel enrichment would crash the sync process, requiring our throttled sequential approach."
+          },
+          "response": []
+        }
+      ],
+      "description": "Direct calls to the Abios Atlas V3 API to demonstrate the technical blockers identified in `ABIOS-INTEGRATION-FIXES.md`.\n\n**Note:** These require a valid `abiosApiKey` variable to be set in the collection or environment."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "testClientIp",
+      "value": "192.0.2.10"
+    },
+    {
+      "key": "expectMockData",
+      "value": "true"
+    },
+    {
+      "key": "abiosBaseUrl",
+      "value": "https://api.abiosgaming.com"
+    },
+    {
+      "key": "abiosApiKey",
+      "value": ""
+    },
+    {
+      "key": "abiosAuthHeader",
+      "value": "Authorization"
+    },
+    {
+      "key": "abiosAuthValue",
+      "value": "Bearer {{abiosApiKey}}"
+    },
+    {
+      "key": "abiosBaseUrl2",
+      "value": ""
+    },
+    {
+      "key": "abiosAuthHeader2",
+      "value": ""
+    }
+  ]
+}
