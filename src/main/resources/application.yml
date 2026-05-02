@@ -118,6 +118,14 @@ management:
     redis:
       enabled: false
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    try-it-out-enabled: true
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
 logging:
   structured:
     format:

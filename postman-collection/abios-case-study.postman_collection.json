@@ -2,10 +2,8 @@
   "info": {
     "_postman_id": "9f73b909-d7aa-4298-a4fb-1a3ea26a029f",
     "name": "Abios Case Study — Live API",
-    "description": "Spring Boot live-esports API — exercise every public endpoint and probes.\n\n## Before you send requests\n1. Start the app: `bash ./scripts/run.sh` (default **classpath mock**, port **8080**) or Atlas: `bash ./scripts/run-atlas.sh` (same as `SPRING_PROFILES_ACTIVE=atlas` + `run.sh`) with `ABIOS_API_KEY`.\n2. Optional full bash sweep (needs curl): `bash ./scripts/run-full-api-verification.sh`.\n\n## Mock vs live\n| Mode | How you know |\n|------|----------------|\n| **Classpath mock** | JSON includes `seriesId` **ser-1001**, player **pl-501**, team **team-1** (from `src/main/resources/abios-mock/series-live.json`). No upstream HTTP. |\n| **Atlas / file mock** | Different IDs; set collection variable `expectMockData` = `false` so optional fingerprint tests are skipped. |\n\n## Variables\n- `baseUrl` — e.g. `http://localhost:8080`\n- `expectMockData` — `true` when using default mock (default); `false` for real Atlas.\n- `testClientIp` — `X-Forwarded-For` hop for an isolated rate-limit bucket (RFC 5737 doc space).\n\n## Rate limits\nPer-IP Bucket4j. For 429 + `Retry-After`, run **Collection Runner** on *Live data* with delay 0 until over limit, or use folder *Rate limiting*.\n\n## Pagination\nAll three live endpoints support optional `skip` and `take` query params for client-side pagination over the in-memory snapshot. Omitting them returns the full list (backwards-compatible).\n\n**Shape:** `{ \"meta\": { fetchedAt, stale, degraded, count, total, skip, take, hasMore }, \"items\": [...] }`. Errors: RFC 7807 where applicable.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "2896116",
-    "_collection_link": "https://go.postman.co/collection/2896116-9f73b909-d7aa-4298-a4fb-1a3ea26a029f?source=collection_link"
+    "description": "Spring Boot live-esports API — exercise every public endpoint and probes.\n\n## Before you send requests\n1. Start the app: `bash ./scripts/run.sh` (default **classpath mock**, port **8080**) or Atlas: `bash ./scripts/run-atlas.sh` with `ABIOS_API_KEY`.\n2. Optional full bash sweep (needs curl): `bash ./scripts/run-full-api-verification.sh`.\n\n## Mock vs live\n| Mode | How you know |\n|------|----------------|\n| **Classpath mock** | JSON includes `seriesId` **ser-1001**, player **pl-501**, team **team-1**. No upstream HTTP. |\n| **Atlas** | Different IDs; set collection variable `expectMockData` = `false` so fingerprint tests are skipped. |\n\n## Variables\n- `baseUrl` — e.g. `http://localhost:8080`\n- `expectMockData` — `true` when using default mock; `false` for real Atlas.\n- `testClientIp` — `X-Forwarded-For` hop for an isolated rate-limit bucket (RFC 5737 doc space).\n\n## Sparse fieldsets\nAll three live endpoints support `?fields=f1,f2` to receive only the requested item fields.\nThe `meta` envelope is always returned in full. Unknown field names are silently ignored.\n\n**Player fields:** `playerId`, `nickname`, `firstName`, `lastName`, `role`, `teamId`, `teamName`, `seriesIds`\n**Team fields:** `teamId`, `name`, `abbreviation`, `playerCount`, `seriesIds`\n**Series fields:** `seriesId`, `name`, `gameName`, `state`, `startedAt`, `tier`, `bestOf`, `teamCount`\n\n## API documentation\nSwagger UI: `{{baseUrl}}/swagger-ui` — try every endpoint interactively.\nOpenAPI 3 JSON: `{{baseUrl}}/v3/api-docs`\n\n## Pagination\nAll three live endpoints accept `skip` (0-based offset) and `take` (page size). Omitting both returns the full list.\n\n**Shape:** `{ \"meta\": { fetchedAt, stale, degraded, count, total, skip, take, hasMore }, \"items\": [...] }`. Errors: RFC 7807 where applicable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
@@ -36,53 +34,30 @@
                   "});",
                   "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
                   "    pm.test(\"Classpath mock fingerprint (series ser-1001)\", () => {",
-                  "        const j = pm.response.json();",
-                  "        const ids = j.items.map(i => i.seriesId);",
+                  "        const ids = pm.response.json().items.map(i => i.seriesId);",
                   "        pm.expect(ids).to.include(\"ser-1001\");",
                   "    });",
                   "}"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/series/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"],
               "query": [
-                {
-                  "key": "skip",
-                  "value": "0",
-                  "description": "Items to skip (0-based offset). Omit to return all.",
-                  "disabled": true
-                },
-                {
-                  "key": "take",
-                  "value": "10",
-                  "description": "Max items to return. Omit or set to 0 to return all.",
-                  "disabled": true
-                }
+                {"key": "skip",         "value": "0",                  "description": "Items to skip (0-based offset). Omit to return all.",         "disabled": true},
+                {"key": "take",         "value": "10",                 "description": "Max items to return. Omit or set to 0 to return all.",         "disabled": true},
+                {"key": "forceRefresh", "value": "true",               "description": "Bypass cache and fetch fresh data from upstream immediately.", "disabled": true},
+                {"key": "fields",       "value": "seriesId,name,state","description": "Comma-separated fields to include per item. Omit for all fields. Available: seriesId, name, gameName, state, startedAt, tier, bestOf, teamCount.", "disabled": true}
               ]
             },
-            "description": "Aggregated live series list from cached upstream snapshot. Supports optional `skip`/`take` for client-side pagination."
+            "description": "All currently live or ongoing esports series. Supports `?skip`/`?take` pagination, `?forceRefresh`, and `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -107,52 +82,30 @@
                   "});",
                   "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
                   "    pm.test(\"Classpath mock fingerprint (player pl-501)\", () => {",
-                  "        const j = pm.response.json();",
-                  "        const ids = j.items.map(i => i.playerId);",
+                  "        const ids = pm.response.json().items.map(i => i.playerId);",
                   "        pm.expect(ids).to.include(\"pl-501\");",
                   "    });",
                   "}"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/players/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "players",
-                "live"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
               "query": [
-                {
-                  "key": "skip",
-                  "value": "0",
-                  "description": "Items to skip (0-based offset). Omit to return all.",
-                  "disabled": true
-                },
-                {
-                  "key": "take",
-                  "value": "10",
-                  "description": "Max items to return. Omit or set to 0 to return all.",
-                  "disabled": true
-                }
+                {"key": "skip",         "value": "0",             "description": "Items to skip (0-based offset). Omit to return all.",         "disabled": true},
+                {"key": "take",         "value": "10",            "description": "Max items to return. Omit or set to 0 to return all.",         "disabled": true},
+                {"key": "forceRefresh", "value": "true",          "description": "Bypass cache and fetch fresh data from upstream immediately.", "disabled": true},
+                {"key": "fields",       "value": "nickname,role", "description": "Comma-separated fields to include per item. Omit for all fields. Available: playerId, nickname, firstName, lastName, role, teamId, teamName, seriesIds.", "disabled": true}
               ]
-            }
+            },
+            "description": "All players in currently live series. Empty when service is in degraded mode. Supports `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -177,52 +130,30 @@
                   "});",
                   "if (pm.collectionVariables.get(\"expectMockData\") === \"true\") {",
                   "    pm.test(\"Classpath mock fingerprint (team team-1)\", () => {",
-                  "        const j = pm.response.json();",
-                  "        const ids = j.items.map(i => i.teamId);",
+                  "        const ids = pm.response.json().items.map(i => i.teamId);",
                   "        pm.expect(ids).to.include(\"team-1\");",
                   "    });",
                   "}"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/teams/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "teams",
-                "live"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "teams", "live"],
               "query": [
-                {
-                  "key": "skip",
-                  "value": "0",
-                  "description": "Items to skip (0-based offset). Omit to return all.",
-                  "disabled": true
-                },
-                {
-                  "key": "take",
-                  "value": "10",
-                  "description": "Max items to return. Omit or set to 0 to return all.",
-                  "disabled": true
-                }
+                {"key": "skip",         "value": "0",                    "description": "Items to skip (0-based offset). Omit to return all.",         "disabled": true},
+                {"key": "take",         "value": "10",                   "description": "Max items to return. Omit or set to 0 to return all.",         "disabled": true},
+                {"key": "forceRefresh", "value": "true",                 "description": "Bypass cache and fetch fresh data from upstream immediately.", "disabled": true},
+                {"key": "fields",       "value": "teamId,name,abbreviation", "description": "Comma-separated fields to include per item. Omit for all fields. Available: teamId, name, abbreviation, playerCount, seriesIds.", "disabled": true}
               ]
-            }
+            },
+            "description": "All teams in currently live series, deduplicated across series. Supports `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -240,43 +171,310 @@
                   "    pm.expect(echo).to.eql(sent);",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-Request-Id",
-                "value": "{{$guid}}",
-                "description": "Optional; server generates one if omitted. Response includes same header.",
-                "type": "text"
-              }
+              {"key": "Accept",       "value": "application/json", "type": "text"},
+              {"key": "X-Request-Id", "value": "{{$guid}}", "description": "Optional; server generates one if omitted. Response includes same header.", "type": "text"}
             ],
             "url": {
               "raw": "{{baseUrl}}/v1/series/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ]
-            }
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"]
+            },
+            "description": "Verifies `X-Request-Id` echo — sent header must be returned in the response."
           },
           "response": []
         }
       ],
-      "description": "Public GET endpoints protected by per-IP rate limiting and request ID propagation."
+      "description": "Public GET endpoints protected by per-IP rate limiting and request ID propagation.\n\nAll three endpoints share the same query params:\n- `skip` / `take` — pagination\n- `forceRefresh` — bypass cache\n- `fields` — sparse fieldsets (enable the disabled param to try it)"
+    },
+    {
+      "name": "Sparse fieldsets",
+      "item": [
+        {
+          "name": "Players — minimal (nickname + role only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"meta is always fully present\", () => {",
+                  "    const m = pm.response.json().meta;",
+                  "    pm.expect(m).to.have.property(\"fetchedAt\");",
+                  "    pm.expect(m).to.have.property(\"count\");",
+                  "    pm.expect(m).to.have.property(\"total\");",
+                  "    pm.expect(m).to.have.property(\"hasMore\");",
+                  "});",
+                  "pm.test(\"items contain only requested fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const item = items[0];",
+                  "    pm.expect(item).to.have.property(\"nickname\");",
+                  "    pm.expect(item).to.have.property(\"role\");",
+                  "    pm.expect(item).to.not.have.property(\"playerId\");",
+                  "    pm.expect(item).to.not.have.property(\"firstName\");",
+                  "    pm.expect(item).to.not.have.property(\"lastName\");",
+                  "    pm.expect(item).to.not.have.property(\"teamId\");",
+                  "    pm.expect(item).to.not.have.property(\"teamName\");",
+                  "    pm.expect(item).to.not.have.property(\"seriesIds\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live?fields=nickname,role",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
+              "query": [{"key": "fields", "value": "nickname,role"}]
+            },
+            "description": "Returns only `nickname` and `role` per player. Confirms unrequested fields are absent and `meta` is always complete."
+          },
+          "response": []
+        },
+        {
+          "name": "Players — extended (identity + team context)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"items contain only requested fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const item = items[0];",
+                  "    [\"playerId\",\"nickname\",\"firstName\",\"lastName\",\"teamName\"].forEach(f => {",
+                  "        pm.expect(item, `field ${f} should be present`).to.have.property(f);",
+                  "    });",
+                  "    pm.expect(item).to.not.have.property(\"seriesIds\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live?fields=playerId,nickname,firstName,lastName,teamName",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
+              "query": [{"key": "fields", "value": "playerId,nickname,firstName,lastName,teamName"}]
+            },
+            "description": "Returns player identity and team name but omits `role`, `teamId`, and `seriesIds`."
+          },
+          "response": []
+        },
+        {
+          "name": "Teams — identity fields only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"meta is always fully present\", () => {",
+                  "    const m = pm.response.json().meta;",
+                  "    pm.expect(m).to.have.property(\"count\");",
+                  "    pm.expect(m).to.have.property(\"total\");",
+                  "});",
+                  "pm.test(\"items contain only requested fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const item = items[0];",
+                  "    pm.expect(item).to.have.property(\"teamId\");",
+                  "    pm.expect(item).to.have.property(\"name\");",
+                  "    pm.expect(item).to.have.property(\"abbreviation\");",
+                  "    pm.expect(item).to.not.have.property(\"playerCount\");",
+                  "    pm.expect(item).to.not.have.property(\"seriesIds\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/teams/live?fields=teamId,name,abbreviation",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "teams", "live"],
+              "query": [{"key": "fields", "value": "teamId,name,abbreviation"}]
+            },
+            "description": "Returns only team ID, name, and abbreviation. Confirms `playerCount` and `seriesIds` are absent."
+          },
+          "response": []
+        },
+        {
+          "name": "Series — state and game only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"items contain only requested fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const item = items[0];",
+                  "    pm.expect(item).to.have.property(\"seriesId\");",
+                  "    pm.expect(item).to.have.property(\"name\");",
+                  "    pm.expect(item).to.have.property(\"state\");",
+                  "    pm.expect(item).to.have.property(\"gameName\");",
+                  "    pm.expect(item).to.not.have.property(\"tier\");",
+                  "    pm.expect(item).to.not.have.property(\"bestOf\");",
+                  "    pm.expect(item).to.not.have.property(\"teamCount\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/series/live?fields=seriesId,name,state,gameName",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"],
+              "query": [{"key": "fields", "value": "seriesId,name,state,gameName"}]
+            },
+            "description": "Returns only series ID, name, lifecycle state, and game name."
+          },
+          "response": []
+        },
+        {
+          "name": "Unknown fields — silently ignored",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 — service does not error on unknown fields\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"meta is always fully present\", () => {",
+                  "    const m = pm.response.json().meta;",
+                  "    pm.expect(m).to.have.property(\"count\");",
+                  "    pm.expect(m).to.have.property(\"total\");",
+                  "    pm.expect(m).to.have.property(\"fetchedAt\");",
+                  "});",
+                  "pm.test(\"no recognised fields returned when only bogus names requested\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const keys = Object.keys(items[0]);",
+                  "    pm.expect(keys).to.not.include(\"nickname\");",
+                  "    pm.expect(keys).to.not.include(\"playerId\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live?fields=unknownField,bogusField",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
+              "query": [{"key": "fields", "value": "unknownField,bogusField"}]
+            },
+            "description": "Sends only non-existent field names. Confirms the server returns 200 and silently ignores them — items become empty objects `{}`."
+          },
+          "response": []
+        },
+        {
+          "name": "No fields param — all fields returned",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All player fields present when ?fields= is omitted\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const item = items[0];",
+                  "    [\"playerId\",\"nickname\",\"role\",\"teamId\",\"teamName\"].forEach(f => {",
+                  "        pm.expect(item, `field ${f} should be present`).to.have.property(f);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"]
+            },
+            "description": "Baseline — no `?fields=` param. Confirms all fields are returned (backwards-compatible behaviour)."
+          },
+          "response": []
+        },
+        {
+          "name": "Fields + pagination combined",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Pagination meta respected\", () => {",
+                  "    const m = pm.response.json().meta;",
+                  "    pm.expect(m.skip).to.eql(0);",
+                  "    pm.expect(m.take).to.eql(5);",
+                  "    pm.expect(m.count).to.eql(pm.response.json().items.length);",
+                  "});",
+                  "pm.test(\"Sparse fields applied within page\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    pm.expect(items[0]).to.have.property(\"nickname\");",
+                  "    pm.expect(items[0]).to.have.property(\"role\");",
+                  "    pm.expect(items[0]).to.not.have.property(\"firstName\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v1/players/live?fields=nickname,role&skip=0&take=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
+              "query": [
+                {"key": "fields", "value": "nickname,role"},
+                {"key": "skip",   "value": "0"},
+                {"key": "take",   "value": "5"}
+              ]
+            },
+            "description": "Combines `?fields=` with `skip`/`take` pagination. Both features work independently on the same request."
+          },
+          "response": []
+        }
+      ],
+      "description": "Verifies the `?fields=` sparse fieldset feature across all three live endpoints.\n\nRules under test:\n- Only the requested fields appear in each item.\n- `meta` is always returned in full regardless of `?fields=`.\n- Unknown field names are silently ignored (no 400 error).\n- Omitting `?fields=` returns all fields (backwards compatible).\n- `?fields=` and `skip`/`take` pagination can be combined freely."
     },
     {
       "name": "Health & actuator",
@@ -300,16 +498,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/actuator/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "actuator",
-                "health"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator", "health"]}
           },
           "response": []
         },
@@ -330,17 +519,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/actuator/health/liveness",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "actuator",
-                "health",
-                "liveness"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/actuator/health/liveness", "host": ["{{baseUrl}}"], "path": ["actuator", "health", "liveness"]}
           },
           "response": []
         },
@@ -361,17 +540,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/actuator/health/readiness",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "actuator",
-                "health",
-                "readiness"
-              ]
-            },
+            "url": {"raw": "{{baseUrl}}/actuator/health/readiness", "host": ["{{baseUrl}}"], "path": ["actuator", "health", "readiness"]},
             "description": "Includes custom `abiosCache` group when configured."
           },
           "response": []
@@ -382,9 +551,7 @@
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
-                ],
+                "exec": ["pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"],
                 "type": "text/javascript"
               }
             }
@@ -392,16 +559,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/actuator/info",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "actuator",
-                "info"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/actuator/info", "host": ["{{baseUrl}}"], "path": ["actuator", "info"]}
           },
           "response": []
         },
@@ -422,22 +580,100 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/actuator/metrics",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "actuator",
-                "metrics"
-              ]
-            },
+            "url": {"raw": "{{baseUrl}}/actuator/metrics", "host": ["{{baseUrl}}"], "path": ["actuator", "metrics"]},
             "description": "Lists available metric names. Use `/actuator/metrics/{name}` for a single meter."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /actuator/prometheus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is Prometheus text format\", () => {",
+                  "    const ct = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "    pm.expect(ct).to.include(\"text/plain\");",
+                  "});",
+                  "pm.test(\"Contains cache metrics\", () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include(\"cache\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{baseUrl}}/actuator/prometheus", "host": ["{{baseUrl}}"], "path": ["actuator", "prometheus"]},
+            "description": "Prometheus scrape endpoint. Exposes upstream latency, cache hit/miss, stale-served, and rate-limit counters. Scrape this from a Prometheus instance or inspect manually."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /swagger-ui (Swagger UI)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Swagger UI accessible (200 after redirect)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is HTML\", () => {",
+                  "    const ct = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "    pm.expect(ct).to.include(\"text/html\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{baseUrl}}/swagger-ui", "host": ["{{baseUrl}}"], "path": ["swagger-ui"]},
+            "description": "Interactive Swagger UI. Open in a browser to explore and try every endpoint. Redirects to `/swagger-ui/index.html`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v3/api-docs (OpenAPI spec)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"OpenAPI spec has required top-level keys\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"openapi\");",
+                  "    pm.expect(j).to.have.property(\"info\");",
+                  "    pm.expect(j).to.have.property(\"paths\");",
+                  "});",
+                  "pm.test(\"Spec documents all three live endpoints\", () => {",
+                  "    const paths = Object.keys(pm.response.json().paths || {});",
+                  "    pm.expect(paths.some(p => p.includes(\"players\"))).to.be.true;",
+                  "    pm.expect(paths.some(p => p.includes(\"teams\"))).to.be.true;",
+                  "    pm.expect(paths.some(p => p.includes(\"series\"))).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {"raw": "{{baseUrl}}/v3/api-docs", "host": ["{{baseUrl}}"], "path": ["v3", "api-docs"]},
+            "description": "Raw OpenAPI 3 JSON spec. Import into any OpenAPI tool or validator."
           },
           "response": []
         }
       ],
-      "description": "Spring Boot Actuator: probes for orchestrators and basic service metadata."
+      "description": "Spring Boot Actuator probes, Prometheus metrics, and API documentation endpoints."
     },
     {
       "name": "Rate limiting",
@@ -455,38 +691,17 @@
                   "    pm.test(\"Status 200 when under limit\", () => pm.response.to.have.status(200));",
                   "}"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-Forwarded-For",
-                "value": "{{testClientIp}}",
-                "description": "Uses a separate token bucket from your default client IP.",
-                "type": "text"
-              }
+              {"key": "Accept",          "value": "application/json", "type": "text"},
+              {"key": "X-Forwarded-For", "value": "{{testClientIp}}", "description": "Uses a separate token bucket from your default client IP.", "type": "text"}
             ],
-            "url": {
-              "raw": "{{baseUrl}}/v1/series/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/v1/series/live", "host": ["{{baseUrl}}"], "path": ["v1", "series", "live"]}
           },
           "response": []
         }
@@ -511,46 +726,22 @@
                   "    pm.expect(j.items.length).to.be.at.most(1);",
                   "    pm.expect(j.meta.count).to.eql(j.items.length);",
                   "    pm.expect(j.meta.total).to.be.a('number');",
-                  "    // store total for cross-request assertions",
                   "    pm.collectionVariables.set(\"_paginationTotal\", j.meta.total);",
                   "    pm.collectionVariables.set(\"_paginationHasMore\", j.meta.hasMore);",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/series/live?skip=0&take=1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ],
-              "query": [
-                {
-                  "key": "skip",
-                  "value": "0"
-                },
-                {
-                  "key": "take",
-                  "value": "1"
-                }
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"],
+              "query": [{"key": "skip", "value": "0"}, {"key": "take", "value": "1"}]
             },
             "description": "First page: 1 item. `meta.hasMore=true` if more series exist in the snapshot."
           },
@@ -575,41 +766,18 @@
                   "    }",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/series/live?skip=1&take=1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ],
-              "query": [
-                {
-                  "key": "skip",
-                  "value": "1"
-                },
-                {
-                  "key": "take",
-                  "value": "1"
-                }
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"],
+              "query": [{"key": "skip", "value": "1"}, {"key": "take", "value": "1"}]
             },
             "description": "Second page. Returns empty items[] if the snapshot had only 1 series."
           },
@@ -630,41 +798,18 @@
                   "    pm.expect(j.meta.hasMore).to.eql(false);",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/series/live?skip=99999&take=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "series",
-                "live"
-              ],
-              "query": [
-                {
-                  "key": "skip",
-                  "value": "99999"
-                },
-                {
-                  "key": "take",
-                  "value": "10"
-                }
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "series", "live"],
+              "query": [{"key": "skip", "value": "99999"}, {"key": "take", "value": "10"}]
             },
             "description": "Edge case: skip past the end. Expects empty items and hasMore=false."
           },
@@ -687,41 +832,18 @@
                   "    pm.expect(j.meta.hasMore).to.eql(j.meta.total > 5);",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/players/live?skip=0&take=5",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "players",
-                "live"
-              ],
-              "query": [
-                {
-                  "key": "skip",
-                  "value": "0"
-                },
-                {
-                  "key": "take",
-                  "value": "5"
-                }
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "players", "live"],
+              "query": [{"key": "skip", "value": "0"}, {"key": "take", "value": "5"}]
             }
           },
           "response": []
@@ -743,41 +865,18 @@
                   "    pm.expect(j.meta.hasMore).to.eql(j.meta.total > 5);",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
             "url": {
               "raw": "{{baseUrl}}/v1/teams/live?skip=0&take=5",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "teams",
-                "live"
-              ],
-              "query": [
-                {
-                  "key": "skip",
-                  "value": "0"
-                },
-                {
-                  "key": "take",
-                  "value": "5"
-                }
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "teams", "live"],
+              "query": [{"key": "skip", "value": "0"}, {"key": "take", "value": "5"}]
             }
           },
           "response": []
@@ -792,29 +891,12 @@
           "name": "1. Thin Payloads (Missing Names)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "{{abiosAuthHeader2}}",
-                "value": "{{abiosApiKey}}",
-                "description": "{{abiosAuthValue}}",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "description": "{{abiosAuthValue}}", "type": "text"}],
             "url": {
               "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}",
-              "host": [
-                "{{abiosBaseUrl2}}"
-              ],
-              "path": [
-                "v3",
-                "series"
-              ],
-              "query": [
-                {
-                  "key": "filter",
-                  "value": "lifecycle<={live,ongoing}"
-                }
-              ]
+              "host": ["{{abiosBaseUrl2}}"],
+              "path": ["v3", "series"],
+              "query": [{"key": "filter", "value": "lifecycle<={live,ongoing}"}]
             },
             "description": "Demonstrates that the standard `/series` endpoint returns `roster_id` but NO names for teams or players.\n\n**Blocker:** Without enrichment, the UI would show empty strings or raw IDs only."
           },
@@ -824,31 +906,14 @@
           "name": "2. Ignored Deep Includes (Sandbox Blocker)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "{{abiosAuthHeader2}}",
-                "value": "{{abiosApiKey}}",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
               "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}&include=participants.roster.team.name,participants.roster.players.player.nick",
-              "host": [
-                "{{abiosBaseUrl2}}"
-              ],
-              "path": [
-                "v3",
-                "series"
-              ],
+              "host": ["{{abiosBaseUrl2}}"],
+              "path": ["v3", "series"],
               "query": [
-                {
-                  "key": "filter",
-                  "value": "lifecycle<={live,ongoing}"
-                },
-                {
-                  "key": "include",
-                  "value": "participants.roster.team.name,participants.roster.players.player.nick"
-                }
+                {"key": "filter",  "value": "lifecycle<={live,ongoing}"},
+                {"key": "include", "value": "participants.roster.team.name,participants.roster.players.player.nick"}
               ]
             },
             "description": "Attempting to use `include` to solve the N+1 problem.\n\n**Blocker:** In the Sandbox tier, these deep includes are often ignored, still returning thin payloads. This forced us to implement the 'Enrichment' strategy."
@@ -859,29 +924,12 @@
           "name": "3. Bulk Fetching Limitation (Ignored Filters)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "{{abiosAuthHeader2}}",
-                "value": "{{abiosApiKey}}",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
               "raw": "{{abiosBaseUrl2}}/v3/rosters?id=123,456,789",
-              "host": [
-                "{{abiosBaseUrl2}}"
-              ],
-              "path": [
-                "v3",
-                "rosters"
-              ],
-              "query": [
-                {
-                  "key": "id",
-                  "value": "123,456,789",
-                  "description": "Example IDs"
-                }
-              ]
+              "host": ["{{abiosBaseUrl2}}"],
+              "path": ["v3", "rosters"],
+              "query": [{"key": "id", "value": "123,456,789", "description": "Example IDs"}]
             },
             "description": "Attempting to fetch multiple rosters in one request.\n\n**Blocker:** Sandbox frequently ignores the `id` CSV list and returns a default page of data, making bulk hydration unreliable."
           },
@@ -891,23 +939,11 @@
           "name": "4. Rate Limit (429) Proof",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "{{abiosAuthHeader2}}",
-                "value": "{{abiosApiKey}}",
-                "type": "text"
-              }
-            ],
+            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
               "raw": "{{abiosBaseUrl2}}/v3/rosters/148669",
-              "host": [
-                "{{abiosBaseUrl2}}"
-              ],
-              "path": [
-                "v3",
-                "rosters",
-                "148669"
-              ]
+              "host": ["{{abiosBaseUrl2}}"],
+              "path": ["v3", "rosters", "148669"]
             },
             "description": "Run this request rapidly (e.g., using the Collection Runner with 100 iterations and 0ms delay).\n\n**Blocker:** Direct Abios Sandbox access is strictly limited. Parallel enrichment would crash the sync process, requiring our throttled sequential approach."
           },
@@ -920,63 +956,22 @@
   "event": [
     {
       "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
+      "script": {"type": "text/javascript", "exec": [""]}
     },
     {
       "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
+      "script": {"type": "text/javascript", "exec": [""]}
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8080"
-    },
-    {
-      "key": "testClientIp",
-      "value": "192.0.2.10"
-    },
-    {
-      "key": "expectMockData",
-      "value": "true"
-    },
-    {
-      "key": "abiosBaseUrl",
-      "value": "https://api.abiosgaming.com"
-    },
-    {
-      "key": "abiosApiKey",
-      "value": ""
-    },
-    {
-      "key": "abiosAuthHeader",
-      "value": "Authorization"
-    },
-    {
-      "key": "abiosAuthValue",
-      "value": "Bearer {{abiosApiKey}}"
-    },
-    {
-      "key": "abiosBaseUrl2",
-      "value": ""
-    },
-    {
-      "key": "abiosAuthHeader2",
-      "value": ""
-    }
+    {"key": "baseUrl",          "value": "http://localhost:8080"},
+    {"key": "testClientIp",     "value": "192.0.2.10"},
+    {"key": "expectMockData",   "value": "true"},
+    {"key": "abiosBaseUrl",     "value": "https://api.abiosgaming.com"},
+    {"key": "abiosApiKey",      "value": ""},
+    {"key": "abiosAuthHeader",  "value": "Authorization"},
+    {"key": "abiosAuthValue",   "value": "Bearer {{abiosApiKey}}"},
+    {"key": "abiosBaseUrl2",    "value": ""},
+    {"key": "abiosAuthHeader2", "value": ""}
   ]
 }

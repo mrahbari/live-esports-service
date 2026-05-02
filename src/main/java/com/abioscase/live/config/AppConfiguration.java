@@ -1,5 +1,7 @@
 package com.abioscase.live.config;
 
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import java.time.Duration;
 
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.web.client.RestClient;
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
@@ -23,6 +26,13 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 @Configuration
 @EnableConfigurationProperties({AbiosProperties.class, LiveDataProperties.class})
 public class AppConfiguration {
+
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer jacksonFilterCustomizer() {
+        // Ensures @JsonFilter-annotated DTOs serialize all fields when no ?fields= param is present.
+        return builder -> builder.filters(
+                new SimpleFilterProvider().setDefaultFilter(SimpleBeanPropertyFilter.serializeAll()));
+    }
 
     @Bean
     public RestClient abiosRestClient(AbiosProperties abios) {

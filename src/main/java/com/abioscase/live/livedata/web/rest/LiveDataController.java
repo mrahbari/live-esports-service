@@ -7,18 +7,35 @@ import com.abioscase.live.livedata.web.dto.LiveSeriesItem;
 import com.abioscase.live.livedata.web.dto.LiveTeamItem;
 import com.abioscase.live.livedata.application.LiveDataService;
 import com.abioscase.live.livedata.cache.LiveSnapshot;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Live Data", description = "Real-time esports series, teams, and players from Abios Atlas")
 @RestController
 @RequiredArgsConstructor
 public class LiveDataController {
 
     private final LiveDataService liveDataService;
 
+    @Operation(
+        summary = "List live series",
+        description = "Returns all currently live or ongoing esports series.",
+        parameters = @Parameter(
+            name = "fields",
+            description = "Comma-separated list of fields to include in each item. Omit to return all fields. "
+                        + "Available: `seriesId`, `name`, `gameName`, `state`, `startedAt`, `tier`, `bestOf`, `teamCount`.",
+            in = ParameterIn.QUERY,
+            schema = @Schema(type = "string", example = "seriesId,name,state")
+        )
+    )
     @GetMapping({"/v1/series/live", "/series/live", "/v1/series"})
     public LiveListResponse<LiveSeriesItem> liveSeries(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,
@@ -28,6 +45,18 @@ public class LiveDataController {
         return wrap(d, d.series(), skip, take);
     }
 
+    @Operation(
+        summary = "List live players",
+        description = "Returns all players participating in currently live series. "
+                    + "Returns an empty list when the service is in degraded mode.",
+        parameters = @Parameter(
+            name = "fields",
+            description = "Comma-separated list of fields to include in each item. Omit to return all fields. "
+                        + "Available: `playerId`, `nickname`, `firstName`, `lastName`, `role`, `teamId`, `teamName`, `seriesIds`.",
+            in = ParameterIn.QUERY,
+            schema = @Schema(type = "string", example = "nickname,role")
+        )
+    )
     @GetMapping({"/v1/players/live", "/players/live", "/v1/players"})
     public LiveListResponse<LivePlayerItem> livePlayers(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,
@@ -39,6 +68,17 @@ public class LiveDataController {
         return wrap(d, players, skip, take);
     }
 
+    @Operation(
+        summary = "List live teams",
+        description = "Returns all teams participating in currently live series.",
+        parameters = @Parameter(
+            name = "fields",
+            description = "Comma-separated list of fields to include in each item. Omit to return all fields. "
+                        + "Available: `teamId`, `name`, `abbreviation`, `playerCount`, `seriesIds`.",
+            in = ParameterIn.QUERY,
+            schema = @Schema(type = "string", example = "teamId,name,abbreviation")
+        )
+    )
     @GetMapping({"/v1/teams/live", "/teams/live", "/v1/teams"})
     public LiveListResponse<LiveTeamItem> liveTeams(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,

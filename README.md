@@ -24,6 +24,8 @@ A resilient Spring Boot microservice that aggregates live esports data from the 
 11. [Production Readiness Score](#production-readiness-score)
 12. [Roadmap](#roadmap)
 13. [AI-Assisted Development](#ai-assisted-development)
+14. [Sparse Fieldsets (`?fields=`)](#sparse-fieldsets-fields)
+15. [API Documentation (Swagger UI)](#api-documentation-swagger-ui)
 
 ---
 
@@ -99,8 +101,12 @@ After `./scripts/run.sh` or `./scripts/run-atlas.sh`:
 | `http://localhost:8080/v1/players/live` | Live players — enriched with team context. |
 | `http://localhost:8080/actuator/prometheus` | Prometheus metrics (upstream latency, cache hit/miss, rate-limit counters). |
 | `http://localhost:8080/actuator/info` | Build info and active profile. |
+| `http://localhost:8080/swagger-ui` | Interactive Swagger UI — try every endpoint in the browser. |
+| `http://localhost:8080/v3/api-docs` | Raw OpenAPI 3 JSON spec. |
 
-Query params available on all three data endpoints: `?skip=0&take=20&forceRefresh=true`.
+Query params available on all three data endpoints: `?skip=0&take=20&forceRefresh=true&fields=field1,field2`.
+
+The `?fields=` param selects which item fields are returned (sparse fieldsets). Omit it to receive all fields. Unknown field names are silently ignored. The `meta` envelope is always returned in full.
 
 ---
 
@@ -123,6 +129,8 @@ For the MVC layer specifically: `LiveDataControllerMvcTest` covers all three end
 - **Client Protection:** Implements inbound rate limiting (IP-based) to prevent service overload.
 - **Consistency:** All three endpoints are served from a single snapshot — data is always internally consistent.
 - **Portability:** Fully containerized with Docker and optimized for Kubernetes environments.
+- **Sparse Fieldsets:** Clients request only the fields they need via `?fields=f1,f2` — no code changes required per client.
+- **API Documentation:** Full OpenAPI 3 spec auto-generated; interactive Swagger UI available at `/swagger-ui`.
 
 ---
 
@@ -163,6 +171,31 @@ This reduces upstream calls by **~90%** and cuts total wall-clock time by roughl
 - All endpoints serve from this shared, immutable object.
 - **Result:** O(1) response time for clients and absolute internal consistency across endpoints.
 
+### Sparse Fieldsets (`?fields=`)
+Clients can request only the fields they need from any list endpoint — similar to GraphQL field selection, but over plain REST with no new dependencies.
+
+```
+GET /v1/players/live?fields=nickname,role
+GET /v1/teams/live?fields=teamId,name,abbreviation
+GET /v1/series/live?fields=seriesId,name,state,gameName
+```
+
+**How it works:** A single `FieldSelectionAdvice` (`ResponseBodyAdvice`) intercepts all JSON responses. When `?fields=` is present it wraps the body in a Jackson `MappingJacksonValue` with a `SimpleBeanPropertyFilter` — only the named fields are serialized per item. The internal `LiveSnapshot` object is never modified; filtering is entirely at the serialization boundary.
+
+| Rule | Behaviour |
+|---|---|
+| `?fields=` absent or empty | All fields returned (default) |
+| Unknown field names | Silently ignored |
+| `meta` envelope | Always returned in full, unaffected by `?fields=` |
+
+Available fields per resource:
+
+| Resource | Fields |
+|---|---|
+| **Player** | `playerId`, `nickname`, `firstName`, `lastName`, `role`, `teamId`, `teamName`, `seriesIds` |
+| **Team** | `teamId`, `name`, `abbreviation`, `playerCount`, `seriesIds` |
+| **Series** | `seriesId`, `name`, `gameName`, `state`, `startedAt`, `tier`, `bestOf`, `teamCount` |
+
 ### Resilience & High Concurrency
 - **Virtual Threads:** Lightweight threads for I/O-bound Atlas calls without pinning carrier threads.
 - **Retry with Exponential Backoff:** Handles transient network and upstream errors.
@@ -192,7 +225,7 @@ This reduces upstream calls by **~90%** and cuts total wall-clock time by roughl
 
 ---
 
-## Readiness Score
+## Production Readiness Score
 
 | Category | Score | Status |
 |---|---|---|
@@ -214,6 +247,8 @@ This reduces upstream calls by **~90%** and cuts total wall-clock time by roughl
 | 002 | Resilience layer: Resilience4j retry, circuit breaker, outbound rate limiter | Shipped | Done |
 | 003 | Client protection: per-IP token bucket (Caffeine + optional Redis) | Shipped | Done |
 | 004 | Mock mode + Atlas profile switchover via Spring profiles | Shipped | Done |
+| 005 | Sparse fieldsets (`?fields=`) — per-request field selection via `FieldSelectionAdvice` + Jackson filters | Shipped | Done |
+| 006 | OpenAPI 3 / Swagger UI via springdoc — all endpoints documented with field-level `@Schema` annotations | Shipped | Done |
 | 010 | Security: restrict `/actuator` endpoints by environment; mTLS for Redis in prod | Planned | Todo |
 | 011 | CI pipeline: build + test on PR (Docker-in-Docker for the Maven container) | Planned | Todo |
 | 012 | Tracing: OpenTelemetry exporter + trace-id propagation to upstream calls | Planned | Todo |
@@ -222,11 +257,51 @@ This reduces upstream calls by **~90%** and cuts total wall-clock time by roughl
 
 ---
 
+## Sparse Fieldsets (`?fields=`)
+
+All three list endpoints support on-demand field selection. Pass a comma-separated list of field names and only those fields are included in each `items` element. The `meta` envelope is always returned in full.
+
+```bash
+# Only nickname and role per player
+curl "http://localhost:8080/v1/players/live?fields=nickname,role"
+
+# Only identity fields per team
+curl "http://localhost:8080/v1/teams/live?fields=teamId,name,abbreviation"
+
+# Series name and state only
+curl "http://localhost:8080/v1/series/live?fields=seriesId,name,state"
+
+# Combine with pagination
+curl "http://localhost:8080/v1/players/live?fields=nickname,role&skip=0&take=10"
+```
+
+Unknown field names are silently dropped. Omitting `?fields=` returns all fields (backwards compatible).
+
+---
+
+## API Documentation (Swagger UI)
+
+After starting the service, open the interactive Swagger UI to explore and test every endpoint:
+
+```
+http://localhost:8080/swagger-ui
+```
+
+The raw OpenAPI 3 JSON spec is at:
+
+```
+http://localhost:8080/v3/api-docs
+```
+
+Every endpoint, query parameter (including `?fields=` with its available field names per resource), and response shape is documented. All DTO fields carry `@Schema` descriptions.
+
+---
+
 ## AI-Assisted Development
 
 This section is optional transparency for portfolio context: how much of the work was produced with an AI coding assistant, and what was done to own the result.
 
-**Tool used:** Cursor + Gemini — iterative prompting, reviewed and adjusted by the author.
+**Tool used:** Claude Code (Anthropic) — iterative prompting, reviewed and adjusted by the author.
 
 | Area | Approx. % AI-assisted | Role |
 |---|-----------------------|---|
@@ -242,8 +317,7 @@ This section is optional transparency for portfolio context: how much of the wor
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/pic1-live-series.jpg" width="30%" alt="Live Series">
-  <img src="docs/screenshots/pic2-live-teams.jpg" width="30%" alt="Live Teams">
-  <img src="docs/screenshots/pic3-live-players.jpg" width="30%" alt="Live Players">
+  <img src="docs/screenshots/pic1-live-series.jpg" width="33%" alt="Live Series">
+  <img src="docs/screenshots/pic2-live-teams.jpg" width="33%" alt="Live Teams">
+  <img src="docs/screenshots/pic3-live-players.jpg" width="33%" alt="Live Players">
 </p>
-
