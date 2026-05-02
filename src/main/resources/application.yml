@@ -1,0 +1,127 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 1024
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: live-esports-service
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2000
+      timeout: 1000
+
+# Abios Atlas integration. For the case-study key: set env ABIOS_API_KEY (never commit).
+# Real calls: --spring.profiles.active=atlas  (see application-atlas.yml)
+abios:
+  mock-enabled: true
+  base-url: "https://api.abiosgaming.com"
+  series-path: "/v3/series"
+  series-query: "filter=lifecycle<={live,ongoing}"
+  rosters-path: "/v3/rosters"
+  rosters-query: "include=team&include=line_up.players.player"
+  lineups-path: "/v3/lineups"
+  lineups-query: "include=players"
+  teams-path: "/v3/teams"
+  teams-query: ""
+  players-path: "/v3/players"
+  players-query: ""
+  connect-timeout-ms: 3000
+  read-timeout-ms: 8000
+  auth-header-name: "Authorization"
+  auth-header-format: "Bearer {token}"
+  # Export ABIOS_API_KEY for real calls; with mock, leave empty
+  api-key: ${ABIOS_API_KEY:}
+  log-upstream-payload: ${ABIOS_LOG_UPSTREAM_PAYLOAD:false}
+
+app:
+  live:
+    cache-mode: ${CACHE_MODE:memory} # memory | redis
+    cache-ttl-seconds: 20
+    background-refresh-ms: 15000
+    background-refresh-enabled: true
+    max-stale-ttl-seconds: 300
+    client-rate-limit-per-minute: 120
+    client-burst-capacity: 120
+
+# Outgoing: cap calls to Abios. Incoming: cap clients. Tune to your Atlas plan.
+# https://abiosgaming.com/docs/en/content/atlas/2021-05-11/introduction/getting-started
+resilience4j:
+  ratelimiter:
+    instances:
+      abiosOut:
+        limit-for-period: 30
+        limit-refresh-period: 1m
+        timeout-duration: 0s
+      publicIn:
+        limit-for-period: 200
+        limit-refresh-period: 1m
+        timeout-duration: 0s
+  circuitbreaker:
+    instances:
+      abios:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        record-exceptions:
+          - com.abioscase.live.integration.abios.exception.AbiosUpstreamException
+          - org.springframework.web.client.RestClientException
+  retry:
+    instances:
+      abios:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        randomized-wait-factor: 0.5
+        retry-exceptions:
+          - com.abioscase.live.integration.abios.exception.AbiosUpstreamTransientException
+          - com.abioscase.live.integration.abios.exception.AbiosUpstreamRateLimitedException
+          - org.springframework.web.client.RestClientException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, info, prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          # Redis excluded from default readiness — enable via CACHE_MODE=redis profile
+          include: readinessState,abiosCache
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+    redis:
+      enabled: false
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    com.abioscase.live: INFO
+    com.abioscase.live.upstream: DEBUG

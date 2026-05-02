@@ -1,0 +1,35 @@
+{
+  "series": [
+    {
+      "id": "ser-1001",
+      "title": "[MOCK] Spring Split 2025 — Grand Finals",
+      "game": { "name": "League of Legends" },
+      "lifecycle": "live",
+      "start": "2025-04-20T16:00:00Z",
+      "tier": 1,
+      "best_of": 5,
+      "participants": [
+        {
+          "roster": { "id": "ros-101" }
+        },
+        {
+          "roster": { "id": "ros-102" }
+        }
+      ]
+    },
+    {
+      "id": "ser-2002",
+      "title": "[MOCK] Open Qualifier D",
+      "game": { "name": "Counter-Strike 2" },
+      "lifecycle": "ongoing",
+      "start": "2025-04-22T10:00:00Z",
+      "tier": 3,
+      "best_of": 1,
+      "participants": [
+        {
+          "roster": { "id": "ros-301" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "rosters": [
+    {
+      "id": "ros-101",
+      "team": { 
+        "id": "team-1", 
+        "name": "[MOCK] Northside Lynx",
+        "abbreviation": "NL"
+      },
+      "line_up": {
+        "players": [
+          { 
+            "id": "pl-501", 
+            "nickname": "[MOCK] NorthMid", 
+            "first_name": "James",
+            "last_name": "Smith",
+            "role": "mid" 
+          },
+          { 
+            "id": "pl-502", 
+            "nickname": "[MOCK] NorthJungle", 
+            "first_name": "Robert",
+            "last_name": "Johnson",
+            "role": "jungle" 
+          }
+        ]
+      }
+    },
+    {
+      "id": "ros-102",
+      "team": { 
+        "id": "team-2", 
+        "name": "[MOCK] Harbor Stingrays",
+        "abbreviation": "HS"
+      },
+      "line_up": {
+        "players": [
+          { 
+            "id": "pl-601", 
+            "nickname": "[MOCK] StingAD", 
+            "first_name": "Maria",
+            "last_name": "Garcia",
+            "role": "adc" 
+          }
+        ]
+      }
+    },
+    {
+      "id": "ros-301",
+      "team": { 
+        "id": "team-3", 
+        "name": "[MOCK] Aurora Core",
+        "abbreviation": "AC"
+      },
+      "line_up": {
+        "players": [
+          { 
+            "id": "pl-901", 
+            "nickname": "[MOCK] Aurora1", 
+            "first_name": "Anders",
+            "last_name": "Sjöberg",
+            "role": "rifler" 
+          }
+        ]
+      }
+    }
+  ]
+}

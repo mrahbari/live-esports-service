@@ -1,0 +1,33 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: live-esports-service:local
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      ABIOS_API_KEY: ${ABIOS_API_KEY:-}
+      # true = INFO logs raw Atlas /v3/series JSON (truncated) + parse-shape summary (see AbiosDataGateway)
+      ABIOS_LOG_UPSTREAM_PAYLOAD: ${ABIOS_LOG_UPSTREAM_PAYLOAD:-false}
+      ABIOS_MOCK_FILE: /app/abios-mock/series-live.json
+      REDIS_HOST: redis
+      CACHE_MODE: ${CACHE_MODE:-memory}
+      # Optional smoke tuning (matches application.yml defaults if unset)
+      APP_LIVE_CLIENT_RATE_LIMIT_PER_MINUTE: ${APP_LIVE_CLIENT_RATE_LIMIT_PER_MINUTE:-120}
+      APP_LIVE_CLIENT_BURST_CAPACITY: ${APP_LIVE_CLIENT_BURST_CAPACITY:-120}
+    volumes:
+      - ./src/main/resources/abios-mock:/app/abios-mock:ro
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
