@@ -148,7 +148,7 @@ The project follows **Clean Architecture / DDD** principles:
 ## Technical Achievements
 
 ### The Parallel 6-Phase Integration Pattern
-To avoid the **N+1 problem** and minimise latency, the enrichment pipeline uses an optimised 6-phase strategy with **Java 21 Virtual Threads**:
+To avoid the **N+1 problem** and minimise latency, the enrichment pipeline uses an optimised 6-phase strategy with **Virtual Threads**:
 
 1. **Phase 1:** Fetch all live series with pagination.
 2. **Phase 2:** Extract unique Roster, Team, and Player IDs in-memory.
@@ -164,8 +164,6 @@ This reduces upstream calls by **~90%** and cuts total wall-clock time by roughl
 - **Result:** O(1) response time for clients and absolute internal consistency across endpoints.
 
 ### Resilience & High Concurrency
-Powered by **Resilience4j** and **Java 21 Loom**:
-
 - **Virtual Threads:** Lightweight threads for I/O-bound Atlas calls without pinning carrier threads.
 - **Retry with Exponential Backoff:** Handles transient network and upstream errors.
 - **Circuit Breaker:** Prevents cascading failures when the upstream is unstable.
