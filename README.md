@@ -242,8 +242,8 @@ This section is optional transparency for portfolio context: how much of the wor
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/pic1-live-series.jpg" width="300" alt="Live Series">
-  <img src="docs/screenshots/pic2-live-teams.jpg" width="300" alt="Live Teams">
-  <img src="docs/screenshots/pic3-live-players.jpg" width="300" alt="Live Players">
+  <img src="docs/screenshots/pic1-live-series.jpg" width="30%" alt="Live Series">
+  <img src="docs/screenshots/pic2-live-teams.jpg" width="30%" alt="Live Teams">
+  <img src="docs/screenshots/pic3-live-players.jpg" width="30%" alt="Live Players">
 </p>
 
