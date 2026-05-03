@@ -15,11 +15,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Live Data", description = "Real-time esports series, teams, and players from Abios Atlas")
+@Tag(name = "Live Data (V1)", description = "Real-time esports series, teams, and players — cache-backed, low-latency.")
 @RestController
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 public class LiveDataController {
 
@@ -36,7 +38,7 @@ public class LiveDataController {
             schema = @Schema(type = "string", example = "seriesId,name,state")
         )
     )
-    @GetMapping({"/v1/series/live", "/series/live", "/v1/series"})
+    @GetMapping("/series/live")
     public LiveListResponse<LiveSeriesItem> liveSeries(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,
             @RequestParam(required = false, defaultValue = "0") int skip,
@@ -57,7 +59,7 @@ public class LiveDataController {
             schema = @Schema(type = "string", example = "nickname,role")
         )
     )
-    @GetMapping({"/v1/players/live", "/players/live", "/v1/players"})
+    @GetMapping("/players/live")
     public LiveListResponse<LivePlayerItem> livePlayers(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,
             @RequestParam(required = false, defaultValue = "0") int skip,
@@ -79,7 +81,7 @@ public class LiveDataController {
             schema = @Schema(type = "string", example = "teamId,name,abbreviation")
         )
     )
-    @GetMapping({"/v1/teams/live", "/teams/live", "/v1/teams"})
+    @GetMapping("/teams/live")
     public LiveListResponse<LiveTeamItem> liveTeams(
             @RequestParam(required = false, defaultValue = "false") boolean forceRefresh,
             @RequestParam(required = false, defaultValue = "0") int skip,

@@ -1,0 +1,9 @@
+target/
+*.log
+.git/
+.idea/
+.claude/
+.vscode/
+*.swp
+*.bak
+docker-compose.override.yml

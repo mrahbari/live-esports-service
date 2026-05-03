@@ -3,14 +3,14 @@
 #
 # Never commit ABIOS_API_KEY. Run: SPRING_PROFILES_ACTIVE=atlas ./scripts/run.sh  or ./scripts/run-atlas.sh
 #
-# Optional: ABIOS_LOG_UPSTREAM_PAYLOAD=true logs full upstream JSON (truncated) + one parse-shape line at INFO.
+# Optional: LOG_UPSTREAM_PAYLOAD=true logs full upstream JSON (truncated) + one parse-shape line at INFO.
 #
 # To add Redis to readiness probe when CACHE_MODE=redis, override at runtime:
 #   --management.health.redis.enabled=true
 #   --management.endpoint.health.group.readiness.include=readinessState,abiosCache,redis
 
 abios:
-  mock-enabled: false
+  v1-mock-enabled: false
   base-url: "https://atlas.abiosgaming.com"
   series-query: "filter=lifecycle<={live,ongoing}&include=participants.roster.team&include=participants.roster.line_up.players.player"
   lineups-path: "/v3/rosters"

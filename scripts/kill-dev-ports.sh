@@ -6,7 +6,7 @@
 set -euo pipefail
 
 if [[ $# -eq 0 ]]; then
-  PORTS=(8080 6379)
+  PORTS=(8080 6379 5432)
 else
   PORTS=("$@")
 fi
@@ -44,7 +44,16 @@ for p in "${PORTS[@]}"; do
       # shellcheck disable=SC2086
       kill -9 $pids 2>/dev/null || true
     fi
-  else
-    echo "    WARN: install fuser (often in psmisc) or lsof to free port $p on this OS." >&2
   fi
 done
+
+# Additionally, kill any rogue Java processes that might be holding files in 'target'
+# but are no longer listening on ports (e.g. zombie tests or shutting down apps).
+echo "==> Checking for rogue java processes..."
+# Search for java processes related to this project or maven, excluding the current script and its parent.
+java_pids=$(pgrep -f "live-esports-service|maven|surefire" | grep -vE "$$|${PPID}" || true)
+if [[ -n "${java_pids}" ]]; then
+  echo "    Killing rogue java processes: ${java_pids}"
+  # shellcheck disable=SC2086
+  kill -9 ${java_pids} 2>/dev/null || true
+fi

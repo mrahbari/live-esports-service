@@ -39,7 +39,7 @@ class LiveDataControllerMvcTest {
         LiveSnapshot snapshot = new LiveSnapshot(Instant.parse("2024-01-15T10:30:00Z"), false, false, null, List.of(), List.of(), List.of(), Map.of("total", 5));
         when(liveDataService.getSnapshot()).thenReturn(snapshot);
 
-        mockMvc.perform(get("/series/live").header("X-Forwarded-For", "10.0.0.10"))
+        mockMvc.perform(get("/v1/series/live").header("X-Forwarded-For", "10.0.0.10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.meta.fetchedAt").value("2024-01-15T10:30:00Z"))
                 .andExpect(jsonPath("$.meta.stale").value(false))
@@ -58,8 +58,8 @@ class LiveDataControllerMvcTest {
         when(liveDataService.getSnapshot()).thenReturn(snapshot);
 
         String ip = "10.0.0.20";
-        mockMvc.perform(get("/series/live").header("X-Forwarded-For", ip)).andExpect(status().isOk());
-        mockMvc.perform(get("/series/live").header("X-Forwarded-For", ip))
+        mockMvc.perform(get("/v1/series/live").header("X-Forwarded-For", ip)).andExpect(status().isOk());
+        mockMvc.perform(get("/v1/series/live").header("X-Forwarded-For", ip))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
     }
@@ -126,18 +126,18 @@ class LiveDataControllerMvcTest {
                 .andExpect(jsonPath("$.meta.hasMore").value(false));
     }
 
-    private static LiveSnapshot snapshotWithOnePlayer() {
-        var player = new LivePlayerItem("pl-1", "TestNick", "John", "Doe", "carry", "team-1", "Team Alpha", List.of("ser-1"));
-        return new LiveSnapshot(Instant.parse("2024-01-15T10:30:00Z"), false, false, null,
-                List.of(), List.of(player), List.of(), Map.of());
-    }
-
     @Test
     void returns503OnTransientUpstreamFailure() throws Exception {
         when(liveDataService.getSnapshot()).thenThrow(new AbiosUpstreamTransientException("temporary issue"));
 
-        mockMvc.perform(get("/series/live").header("X-Forwarded-For", "10.0.0.30"))
+        mockMvc.perform(get("/v1/series/live").header("X-Forwarded-For", "10.0.0.30"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.title").value("Upstream Temporary Failure"));
+    }
+
+    private static LiveSnapshot snapshotWithOnePlayer() {
+        var player = new LivePlayerItem("pl-1", "TestNick", "John", "Doe", "carry", "team-1", "Team Alpha", List.of("ser-1"));
+        return new LiveSnapshot(Instant.parse("2024-01-15T10:30:00Z"), false, false, null,
+                List.of(), List.of(player), List.of(), Map.of());
     }
 }

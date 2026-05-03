@@ -2,12 +2,12 @@
   "info": {
     "_postman_id": "9f73b909-d7aa-4298-a4fb-1a3ea26a029f",
     "name": "Abios Case Study — Live API",
-    "description": "Spring Boot live-esports API — exercise every public endpoint and probes.\n\n## Before you send requests\n1. Start the app: `bash ./scripts/run.sh` (default **classpath mock**, port **8080**) or Atlas: `bash ./scripts/run-atlas.sh` with `ABIOS_API_KEY`.\n2. Optional full bash sweep (needs curl): `bash ./scripts/run-full-api-verification.sh`.\n\n## Mock vs live\n| Mode | How you know |\n|------|----------------|\n| **Classpath mock** | JSON includes `seriesId` **ser-1001**, player **pl-501**, team **team-1**. No upstream HTTP. |\n| **Atlas** | Different IDs; set collection variable `expectMockData` = `false` so fingerprint tests are skipped. |\n\n## Variables\n- `baseUrl` — e.g. `http://localhost:8080`\n- `expectMockData` — `true` when using default mock; `false` for real Atlas.\n- `testClientIp` — `X-Forwarded-For` hop for an isolated rate-limit bucket (RFC 5737 doc space).\n\n## Sparse fieldsets\nAll three live endpoints support `?fields=f1,f2` to receive only the requested item fields.\nThe `meta` envelope is always returned in full. Unknown field names are silently ignored.\n\n**Player fields:** `playerId`, `nickname`, `firstName`, `lastName`, `role`, `teamId`, `teamName`, `seriesIds`\n**Team fields:** `teamId`, `name`, `abbreviation`, `playerCount`, `seriesIds`\n**Series fields:** `seriesId`, `name`, `gameName`, `state`, `startedAt`, `tier`, `bestOf`, `teamCount`\n\n## API documentation\nSwagger UI: `{{baseUrl}}/swagger-ui` — try every endpoint interactively.\nOpenAPI 3 JSON: `{{baseUrl}}/v3/api-docs`\n\n## Pagination\nAll three live endpoints accept `skip` (0-based offset) and `take` (page size). Omitting both returns the full list.\n\n**Shape:** `{ \"meta\": { fetchedAt, stale, degraded, count, total, skip, take, hasMore }, \"items\": [...] }`. Errors: RFC 7807 where applicable.",
+    "description": "Spring Boot live-esports API — exercise every public endpoint and probes.\n\n## Before you send requests\n1. Start the app: `bash ./scripts/run.sh` (default **classpath mock**, port **8080**) or Atlas: `bash ./scripts/run-atlas.sh` with `ABIOS_API_KEY`.\n2. Optional full bash sweep (needs curl): `bash ./scripts/run-full-api-verification.sh`.\n\n## Mock vs live\n| Mode | How you know |\n|------|----------------|\n| **Classpath mock** | JSON includes `seriesId` **ser-1001**, player **pl-501**, team **team-1**. No upstream HTTP. |\n| **Atlas** | Different IDs; set collection variable `expectMockData` = `false` so fingerprint tests are skipped. |\n\n## Variables\n- `baseUrl` — e.g. `http://localhost:8080`\n- `expectMockData` — `true` when using default mock; `false` for real Atlas.\n- `testClientIp` — `X-Forwarded-For` hop for an isolated rate-limit bucket (RFC 5737 doc space).\n\n## Two API versions\n| Version | Path prefix | Pagination | Backend |\n|---------|-------------|------------|--------|\n| **V1** | `/v1/` | `?skip` + `?take` (offset) | In-memory snapshot cache |\n| **V2** | `/v2/` | `?cursor` + `?take` (cursor-based) | PostgreSQL via polling workers |\n\n## V1 Sparse fieldsets\nV1 live endpoints support `?fields=f1,f2` to receive only the requested item fields.\nThe `meta` envelope is always returned in full. Unknown field names are silently ignored.\n\n**Player fields:** `playerId`, `nickname`, `firstName`, `lastName`, `role`, `teamId`, `teamName`, `seriesIds`\n**Team fields:** `teamId`, `name`, `abbreviation`, `playerCount`, `seriesIds`\n**Series fields:** `seriesId`, `name`, `gameName`, `state`, `startedAt`, `tier`, `bestOf`, `teamCount`\n\n## API documentation\nSwagger UI: `{{baseUrl}}/swagger-ui` — try every endpoint interactively.\nOpenAPI 3 JSON: `{{baseUrl}}/v3/api-docs`\n\n## V1 response shape\n`{ \"meta\": { fetchedAt, stale, degraded, count, total, skip, take, hasMore, atlasCalls }, \"items\": [...] }`\n\n## V2 response shape\n`{ \"items\": [...], \"nextCursor\": \"<id or null>\", \"count\": N, \"hasMore\": true|false }`\n\nErrors: RFC 7807 problem+json where applicable.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Live data",
+      "name": "V1 — Live data (cache-backed)",
       "item": [
         {
           "name": "GET /v1/series/live",
@@ -57,7 +57,7 @@
                 {"key": "fields",       "value": "seriesId,name,state","description": "Comma-separated fields to include per item. Omit for all fields. Available: seriesId, name, gameName, state, startedAt, tier, bestOf, teamCount.", "disabled": true}
               ]
             },
-            "description": "All currently live or ongoing esports series. Supports `?skip`/`?take` pagination, `?forceRefresh`, and `?fields=` sparse fieldsets."
+            "description": "All currently live or ongoing esports series. Cache-backed. Supports `?skip`/`?take` pagination, `?forceRefresh`, and `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -105,7 +105,7 @@
                 {"key": "fields",       "value": "nickname,role", "description": "Comma-separated fields to include per item. Omit for all fields. Available: playerId, nickname, firstName, lastName, role, teamId, teamName, seriesIds.", "disabled": true}
               ]
             },
-            "description": "All players in currently live series. Empty when service is in degraded mode. Supports `?fields=` sparse fieldsets."
+            "description": "All players in currently live series. Cache-backed. Empty when service is in degraded mode. Supports `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -153,7 +153,7 @@
                 {"key": "fields",       "value": "teamId,name,abbreviation", "description": "Comma-separated fields to include per item. Omit for all fields. Available: teamId, name, abbreviation, playerCount, seriesIds.", "disabled": true}
               ]
             },
-            "description": "All teams in currently live series, deduplicated across series. Supports `?fields=` sparse fieldsets."
+            "description": "All teams in currently live series, deduplicated across series. Cache-backed. Supports `?fields=` sparse fieldsets."
           },
           "response": []
         },
@@ -191,10 +191,206 @@
           "response": []
         }
       ],
-      "description": "Public GET endpoints protected by per-IP rate limiting and request ID propagation.\n\nAll three endpoints share the same query params:\n- `skip` / `take` — pagination\n- `forceRefresh` — bypass cache\n- `fields` — sparse fieldsets (enable the disabled param to try it)"
+      "description": "V1 public GET endpoints — served from an in-memory snapshot cache.\n\nAll three endpoints share the same query params:\n- `skip` / `take` — offset-based pagination\n- `forceRefresh` — bypass cache\n- `fields` — sparse fieldsets (enable the disabled param to try it)\n\nResponse shape: `{ meta: { fetchedAt, stale, degraded, count, total, skip, take, hasMore, atlasCalls }, items: [...] }`"
     },
     {
-      "name": "Sparse fieldsets",
+      "name": "V2 — Database-backed (polling)",
+      "item": [
+        {
+          "name": "GET /v2/series/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"V2 pagination envelope\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j).to.have.property(\"nextCursor\");",
+                  "    pm.expect(j).to.have.property(\"count\");",
+                  "    pm.expect(j).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.items).to.be.an('array');",
+                  "    pm.expect(j.count).to.eql(j.items.length);",
+                  "    pm.expect(j.hasMore).to.be.a('boolean');",
+                  "});",
+                  "pm.test(\"Series items have enriched fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const s = items[0];",
+                  "    pm.expect(s).to.have.property(\"seriesId\");",
+                  "    pm.expect(s).to.have.property(\"name\");",
+                  "    pm.expect(s).to.have.property(\"state\");",
+                  "    pm.expect(s).to.have.property(\"gameName\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v2/series/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["v2", "series", "live"],
+              "query": [
+                {"key": "cursor", "value": "12300", "description": "Exclusive lower-bound cursor (last seen seriesId as numeric string). Omit for first page.", "disabled": true},
+                {"key": "take",   "value": "20",       "description": "Page size (default 50, max 200).",                                       "disabled": true}
+              ]
+            },
+            "description": "Enriched live series from the PostgreSQL ingestion pipeline. Cursor-based pagination: pass `nextCursor` from the previous response as `?cursor=` for the next page."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v2/series/upcoming",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"V2 pagination envelope\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j).to.have.property(\"nextCursor\");",
+                  "    pm.expect(j).to.have.property(\"count\");",
+                  "    pm.expect(j).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.items).to.be.an('array');",
+                  "    pm.expect(j.count).to.eql(j.items.length);",
+                  "    pm.expect(j.hasMore).to.be.a('boolean');",
+                  "});",
+                  "pm.test(\"Upcoming items have required fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const s = items[0];",
+                  "    pm.expect(s).to.have.property(\"id\");",
+                  "    pm.expect(s).to.have.property(\"lifecycle\");",
+                  "    pm.expect(s.lifecycle).to.eql(\"upcoming\");",
+                  "    pm.expect(s).to.have.property(\"lastSeenAt\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v2/series/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["v2", "series", "upcoming"],
+              "query": [
+                {"key": "cursor", "value": "12345", "description": "Exclusive lower-bound cursor (last seen id). Omit for first page.", "disabled": true},
+                {"key": "take",   "value": "20",    "description": "Page size (default 50, max 200).",                                  "disabled": true}
+              ]
+            },
+            "description": "Near-future upcoming series from the polling pipeline, filtered by `ingestion.series.window-days` (default 25 days). Only series within [now - window, now + window] are tracked. Cursor-based pagination by `id`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v2/teams/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"V2 pagination envelope\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j).to.have.property(\"nextCursor\");",
+                  "    pm.expect(j).to.have.property(\"count\");",
+                  "    pm.expect(j).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.items).to.be.an('array');",
+                  "    pm.expect(j.count).to.eql(j.items.length);",
+                  "});",
+                  "pm.test(\"Team items have enriched fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const t = items[0];",
+                  "    pm.expect(t).to.have.property(\"teamId\");",
+                  "    pm.expect(t).to.have.property(\"name\");",
+                  "    pm.expect(t).to.have.property(\"playerCount\");",
+                  "    pm.expect(t).to.have.property(\"seriesIds\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v2/teams/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["v2", "teams", "live"],
+              "query": [
+                {"key": "cursor", "value": "team-100", "description": "Exclusive lower-bound cursor (last seen teamId). Omit for first page.", "disabled": true},
+                {"key": "take",   "value": "20",        "description": "Page size (default 50, max 200).",                                     "disabled": true}
+              ]
+            },
+            "description": "Enriched teams participating in live series, read from PostgreSQL. Cursor-based pagination by `teamId`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /v2/players/live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"V2 pagination envelope\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"items\");",
+                  "    pm.expect(j).to.have.property(\"nextCursor\");",
+                  "    pm.expect(j).to.have.property(\"count\");",
+                  "    pm.expect(j).to.have.property(\"hasMore\");",
+                  "    pm.expect(j.items).to.be.an('array');",
+                  "    pm.expect(j.count).to.eql(j.items.length);",
+                  "});",
+                  "pm.test(\"Player items have enriched fields\", () => {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items.length === 0) { return; }",
+                  "    const p = items[0];",
+                  "    pm.expect(p).to.have.property(\"playerId\");",
+                  "    pm.expect(p).to.have.property(\"nickname\");",
+                  "    pm.expect(p).to.have.property(\"teamName\");",
+                  "    pm.expect(p).to.have.property(\"seriesIds\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json", "type": "text"}],
+            "url": {
+              "raw": "{{baseUrl}}/v2/players/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["v2", "players", "live"],
+              "query": [
+                {"key": "cursor", "value": "player-100", "description": "Exclusive lower-bound cursor (last seen playerId). Omit for first page.", "disabled": true},
+                {"key": "take",   "value": "20",          "description": "Page size (default 50, max 200).",                                       "disabled": true}
+              ]
+            },
+            "description": "Enriched players participating in live series, read from PostgreSQL. Cursor-based pagination by `playerId`."
+          },
+          "response": []
+        }
+      ],
+      "description": "V2 database-backed endpoints — served from PostgreSQL via the polling ingestion engine.\n\nAll V2 endpoints use **cursor-based pagination**: pass `?cursor=<nextCursor>` from the previous response to advance. Omit for the first page.\n\nResponse shape: `{ items: [...], nextCursor: \"<id or null>\", count: N, hasMore: true|false }`\n\n### Polling & Write Optimization\nWorkers poll Abios every 3 s (live) and 15 s (upcoming). The Abios API has no `updated_after` filter — each series carries a `resource_version` integer (monotonically increasing counter). The upsert SQL compares the incoming `resource_version` against the stored value and **skips updating data columns when the version is unchanged**, while always refreshing `last_seen_at` (heartbeat). This avoids unnecessary writes during quiet periods.\n\nNote: V2 does NOT support `?fields=` sparse fieldsets. V2 upcoming series are filtered by `window-days` (default 25 days either side of now)."
+    },
+    {
+      "name": "V1 Sparse fieldsets",
       "item": [
         {
           "name": "Players — minimal (nickname + role only)",
@@ -474,7 +670,7 @@
           "response": []
         }
       ],
-      "description": "Verifies the `?fields=` sparse fieldset feature across all three live endpoints.\n\nRules under test:\n- Only the requested fields appear in each item.\n- `meta` is always returned in full regardless of `?fields=`.\n- Unknown field names are silently ignored (no 400 error).\n- Omitting `?fields=` returns all fields (backwards compatible).\n- `?fields=` and `skip`/`take` pagination can be combined freely."
+      "description": "Verifies the `?fields=` sparse fieldset feature on V1 endpoints.\n\nRules under test:\n- Only the requested fields appear in each item.\n- `meta` is always returned in full regardless of `?fields=`.\n- Unknown field names are silently ignored (no 400 error).\n- Omitting `?fields=` returns all fields (backwards compatible).\n- `?fields=` and `skip`/`take` pagination can be combined freely.\n\nNote: `?fields=` is a V1-only feature. V2 endpoints always return all fields."
     },
     {
       "name": "Health & actuator",
@@ -610,7 +806,7 @@
             "method": "GET",
             "header": [],
             "url": {"raw": "{{baseUrl}}/actuator/prometheus", "host": ["{{baseUrl}}"], "path": ["actuator", "prometheus"]},
-            "description": "Prometheus scrape endpoint. Exposes upstream latency, cache hit/miss, stale-served, and rate-limit counters. Scrape this from a Prometheus instance or inspect manually."
+            "description": "Prometheus scrape endpoint. Exposes upstream latency, cache hit/miss, stale-served, and rate-limit counters."
           },
           "response": []
         },
@@ -653,11 +849,12 @@
                   "    pm.expect(j).to.have.property(\"info\");",
                   "    pm.expect(j).to.have.property(\"paths\");",
                   "});",
-                  "pm.test(\"Spec documents all three live endpoints\", () => {",
+                  "pm.test(\"Spec documents V1 and V2 endpoints\", () => {",
                   "    const paths = Object.keys(pm.response.json().paths || {});",
+                  "    pm.expect(paths.some(p => p.includes(\"/v1/\") && p.includes(\"series\"))).to.be.true;",
+                  "    pm.expect(paths.some(p => p.includes(\"/v2/\") && p.includes(\"series\"))).to.be.true;",
                   "    pm.expect(paths.some(p => p.includes(\"players\"))).to.be.true;",
                   "    pm.expect(paths.some(p => p.includes(\"teams\"))).to.be.true;",
-                  "    pm.expect(paths.some(p => p.includes(\"series\"))).to.be.true;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -706,10 +903,10 @@
           "response": []
         }
       ],
-      "description": "`IpRateLimitFilter` keys buckets by client IP (`X-Forwarded-For` first hop, else socket address).\n\nSet collection variable `testClientIp` to simulate another client without changing your machine.\n\nTo see HTTP 429 with `Retry-After`, run **GET /series/live** repeatedly (Collection Runner, delay 0 ms) until the bucket is empty."
+      "description": "`IpRateLimitFilter` keys buckets by client IP (`X-Forwarded-For` first hop, else socket address).\n\nSet collection variable `testClientIp` to simulate another client without changing your machine.\n\nTo see HTTP 429 with `Retry-After`, run **GET /v1/series/live** repeatedly (Collection Runner, delay 0 ms) until the bucket is empty.\n\nNote: Rate limiting applies to V1 endpoints only. V2 endpoints are database-backed and not rate-limited at the IP level."
     },
     {
-      "name": "Pagination",
+      "name": "V1 Pagination",
       "item": [
         {
           "name": "GET /v1/series/live — page 1 (take=1)",
@@ -882,7 +1079,7 @@
           "response": []
         }
       ],
-      "description": "Demonstrates client-side pagination over the in-memory snapshot.\n\nAll live endpoints accept `skip` (0-based offset) and `take` (page size). Omitting both returns the full list — backwards compatible.\n\nPagination is applied in-memory after cache warm; zero upstream calls are made per page request."
+      "description": "V1 offset-based pagination over the in-memory snapshot.\n\nAll V1 endpoints accept `skip` (0-based offset) and `take` (page size). Omitting both returns the full list.\n\nPagination is applied in-memory after cache warm; zero upstream calls are made per page request."
     },
     {
       "name": "Abios Atlas Direct (Issues & Blockers)",
@@ -891,10 +1088,10 @@
           "name": "1. Thin Payloads (Missing Names)",
           "request": {
             "method": "GET",
-            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "description": "{{abiosAuthValue}}", "type": "text"}],
+            "header": [{"key": "{{atlasAuthHeader}}", "value": "{{abiosApiKey}}", "description": "{{abiosAuthValue}}", "type": "text"}],
             "url": {
-              "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}",
-              "host": ["{{abiosBaseUrl2}}"],
+              "raw": "{{atlasBaseUrl}}/v3/series?filter=lifecycle<={live,ongoing}",
+              "host": ["{{atlasBaseUrl}}"],
               "path": ["v3", "series"],
               "query": [{"key": "filter", "value": "lifecycle<={live,ongoing}"}]
             },
@@ -906,10 +1103,10 @@
           "name": "2. Ignored Deep Includes (Sandbox Blocker)",
           "request": {
             "method": "GET",
-            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
+            "header": [{"key": "{{atlasAuthHeader}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
-              "raw": "{{abiosBaseUrl2}}/v3/series?filter=lifecycle<={live,ongoing}&include=participants.roster.team.name,participants.roster.players.player.nick",
-              "host": ["{{abiosBaseUrl2}}"],
+              "raw": "{{atlasBaseUrl}}/v3/series?filter=lifecycle<={live,ongoing}&include=participants.roster.team.name,participants.roster.players.player.nick",
+              "host": ["{{atlasBaseUrl}}"],
               "path": ["v3", "series"],
               "query": [
                 {"key": "filter",  "value": "lifecycle<={live,ongoing}"},
@@ -924,10 +1121,10 @@
           "name": "3. Bulk Fetching Limitation (Ignored Filters)",
           "request": {
             "method": "GET",
-            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
+            "header": [{"key": "{{atlasAuthHeader}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
-              "raw": "{{abiosBaseUrl2}}/v3/rosters?id=123,456,789",
-              "host": ["{{abiosBaseUrl2}}"],
+              "raw": "{{atlasBaseUrl}}/v3/rosters?id=123,456,789",
+              "host": ["{{atlasBaseUrl}}"],
               "path": ["v3", "rosters"],
               "query": [{"key": "id", "value": "123,456,789", "description": "Example IDs"}]
             },
@@ -939,10 +1136,10 @@
           "name": "4. Rate Limit (429) Proof",
           "request": {
             "method": "GET",
-            "header": [{"key": "{{abiosAuthHeader2}}", "value": "{{abiosApiKey}}", "type": "text"}],
+            "header": [{"key": "{{atlasAuthHeader}}", "value": "{{abiosApiKey}}", "type": "text"}],
             "url": {
-              "raw": "{{abiosBaseUrl2}}/v3/rosters/148669",
-              "host": ["{{abiosBaseUrl2}}"],
+              "raw": "{{atlasBaseUrl}}/v3/rosters/148669",
+              "host": ["{{atlasBaseUrl}}"],
               "path": ["v3", "rosters", "148669"]
             },
             "description": "Run this request rapidly (e.g., using the Collection Runner with 100 iterations and 0ms delay).\n\n**Blocker:** Direct Abios Sandbox access is strictly limited. Parallel enrichment would crash the sync process, requiring our throttled sequential approach."
@@ -971,7 +1168,7 @@
     {"key": "abiosApiKey",      "value": ""},
     {"key": "abiosAuthHeader",  "value": "Authorization"},
     {"key": "abiosAuthValue",   "value": "Bearer {{abiosApiKey}}"},
-    {"key": "abiosBaseUrl2",    "value": ""},
-    {"key": "abiosAuthHeader2", "value": ""}
+    {"key": "atlasBaseUrl",     "value": "https://atlas.abiosgaming.com"},
+    {"key": "atlasAuthHeader",  "value": "Abios-Secret"}
   ]
 }

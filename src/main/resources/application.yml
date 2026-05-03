@@ -14,6 +14,19 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:esports}
+    username: ${POSTGRES_USER:esports}
+    password: ${POSTGRES_PASSWORD:esports}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -24,7 +37,7 @@ spring:
 # Abios Atlas integration. For the case-study key: set env ABIOS_API_KEY (never commit).
 # Real calls: --spring.profiles.active=atlas  (see application-atlas.yml)
 abios:
-  mock-enabled: true
+  v1-mock-enabled: true
   base-url: "https://api.abiosgaming.com"
   series-path: "/v3/series"
   series-query: "filter=lifecycle<={live,ongoing}"
@@ -36,13 +49,19 @@ abios:
   teams-query: ""
   players-path: "/v3/players"
   players-query: ""
+  live-polling-query: "filter=lifecycle<={live,ongoing}"
+  upcoming-polling-query: "filter=lifecycle<=upcoming&ordering=start-asc"
   connect-timeout-ms: 3000
   read-timeout-ms: 8000
   auth-header-name: "Authorization"
   auth-header-format: "Bearer {token}"
   # Export ABIOS_API_KEY for real calls; with mock, leave empty
   api-key: ${ABIOS_API_KEY:}
-  log-upstream-payload: ${ABIOS_LOG_UPSTREAM_PAYLOAD:false}
+  log-upstream-payload: ${LOG_UPSTREAM_PAYLOAD:false}
+
+ingestion:
+  series:
+    window-days: ${INGESTION_WINDOW_DAYS:25}
 
 app:
   live:
@@ -53,6 +72,13 @@ app:
     max-stale-ttl-seconds: 300
     client-rate-limit-per-minute: 120
     client-burst-capacity: 120
+  polling:
+    enabled: true
+    live-interval-ms: ${APP_POLLING_LIVE_INTERVAL_MS:3000}
+    upcoming-interval-ms: ${APP_POLLING_UPCOMING_INTERVAL_MS:15000}
+    max-upcoming-pages: 5
+    ended-threshold-cycles: 3
+    max-concurrent-calls: 4
 
 # Outgoing: cap calls to Abios. Incoming: cap clients. Tune to your Atlas plan.
 # https://abiosgaming.com/docs/en/content/atlas/2021-05-11/introduction/getting-started
@@ -130,6 +156,21 @@ logging:
   structured:
     format:
       console: ecs
+  file:
+    name: ${LOG_FILE:./target/logs/app.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      clean-history-on-start: false
   level:
     com.abioscase.live: INFO
+    # V1 (cache-backed): set LOG_V1_LEVEL=DEBUG|WARN|OFF to isolate stream path logs
+    com.abioscase.live.livedata.application: ${LOG_V1_LEVEL:INFO}
+    com.abioscase.live.livedata.cache: ${LOG_V1_LEVEL:INFO}
+    com.abioscase.live.livedata.web.rest.LiveDataController: ${LOG_V1_LEVEL:INFO}
+    # V2 (db-backed polling): set LOG_V2_LEVEL=DEBUG|WARN|OFF to isolate polling/ingestion logs
+    com.abioscase.live.livedata.db: ${LOG_V2_LEVEL:INFO}
+    com.abioscase.live.livedata.polling: ${LOG_V2_LEVEL:INFO}
+    com.abioscase.live.livedata.web.rest.SeriesPollingController: ${LOG_V2_LEVEL:INFO}
     com.abioscase.live.upstream: DEBUG

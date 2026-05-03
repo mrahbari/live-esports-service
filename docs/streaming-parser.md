@@ -126,7 +126,7 @@ public <T> List<T> parseAtlasListPayloadStreaming(
 
 ---
 
-## Change 3 — Raw payload logging (`ABIOS_LOG_UPSTREAM_PAYLOAD`)
+## Change 3 — Raw payload logging (`LOG_UPSTREAM_PAYLOAD`)
 
 With streaming the body is consumed during parsing, so it cannot be logged after the fact.
 
@@ -140,7 +140,7 @@ InputStream effective = abios.isLogUpstreamPayload()
     ? new org.apache.commons.io.input.TeeInputStream(inputStream, loggingOutputStream)
     : inputStream;
 ```
-This only buffers when `ABIOS_LOG_UPSTREAM_PAYLOAD=true`, so normal runs pay no extra cost.
+This only buffers when `LOG_UPSTREAM_PAYLOAD=true`, so normal runs pay no extra cost.
 Add `commons-io` to `pom.xml` if you go this route.
 
 ---
