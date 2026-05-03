@@ -4,7 +4,7 @@
 [![Java](https://img.shields.io/badge/Java-21-blue.svg)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
-A resilient, high-performance esports data aggregator built on **Java 21** and **Spring Boot**. This platform solves the complexity of consuming the Abios Atlas API by offering two distinct architectural tracks tailored for different business needs.
+A resilient, high-performance esports data aggregator built on **Java 21** and **Spring Boot**. This platform serve the simple consuming the Abios Atlas API by offering two distinct architectural tracks tailored for different business needs.
 
 ---
 
@@ -62,9 +62,10 @@ export ABIOS_API_KEY=your_key_here
 
 | Endpoint | Description |
 | :--- | :--- |
-| `GET /v2/series/live` | Live series tracked in PostgreSQL. |
 | `GET /v2/series/upcoming` | Near-future series (window-filtered). |
+| `GET /v2/series/live` | Live series tracked in PostgreSQL. |
 | `GET /v2/teams/live` | Teams from the polling database. |
+| `GET /v2/players/live` | players from the polling database. |
 
 **Query Params:** `?cursor=<lastId>&take=50`
 
@@ -92,11 +93,11 @@ Instead of loading full JSON trees into memory, the ingestion engine uses **Jack
 
 | Script | Purpose |
 | :--- | :--- |
-| `./scripts/build.sh` | Compile and package using Docker (Maven-free host). |
-| `./scripts/test.sh` | Execute full test suite (Unit + Integration). |
 | `./scripts/clean.sh` | **Robust Cleanup:** Wipes target, removes volumes, kills rogue threads. |
-| `./scripts/run-smoke-tests.sh` | Verifies health, rate-limits, and core endpoints. |
+| `./scripts/build.sh` | Compile and package using Docker (Maven-free host). |
 | `./scripts/stop.sh` | Gracefully tear down the Docker stack. |
+| `./scripts/test.sh` | Execute full test suite (Unit + Integration). |
+| `./scripts/run-smoke-tests.sh` | Verifies health, rate-limits, and core endpoints. |
 
 ---
 
@@ -118,6 +119,7 @@ Instead of loading full JSON trees into memory, the ingestion engine uses **Jack
   <img src="docs/screenshots/v1/pic3-live-players.jpg" width="32%" alt="Live Players">
 </p>
 
+---
 ### Scenario B (V2 Polling Track)
 <p align="center">
   <img src="docs/screenshots/v2/pic1-series-table.jpg" width="32%" alt="Live Series Table">
