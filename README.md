@@ -111,8 +111,20 @@ Instead of loading full JSON trees into memory, the ingestion engine uses **Jack
 
 ## 📸 Screenshots
 
+### Scenario A (V1 Snapshot Track)
 <p align="center">
-  <img src="docs/screenshots/pic1-live-series.jpg" width="32%" alt="Live Series">
-  <img src="docs/screenshots/pic2-live-teams.jpg" width="32%" alt="Live Teams">
-  <img src="docs/screenshots/pic3-live-players.jpg" width="32%" alt="Live Players">
+  <img src="docs/screenshots/v1/pic1-live-series.jpg" width="32%" alt="Live Series">
+  <img src="docs/screenshots/v1/pic2-live-teams.jpg" width="32%" alt="Live Teams">
+  <img src="docs/screenshots/v1/pic3-live-players.jpg" width="32%" alt="Live Players">
+</p>
+
+### Scenario B (V2 Polling Track)
+<p align="center">
+  <img src="docs/screenshots/v2/pic1-series-table.jpg" width="32%" alt="Live Series Table">
+  <img src="docs/screenshots/v2/pic2-teams-table.jpg" width="32%" alt="Live Teams Table">
+  <img src="docs/screenshots/v2/pic3-players-table.jpg" width="32%" alt="Live Players Table">
+
+  <img src="docs/screenshots/v2/pic4-series-list.jpg" width="32%" alt="Live Series">
+  <img src="docs/screenshots/v2/pic5-teams-list.jpg" width="32%" alt="Live Teams">
+  <img src="docs/screenshots/v2/pic6-players-list.jpg" width="32%" alt="Live Players">
 </p>
