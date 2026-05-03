@@ -31,7 +31,7 @@ public class AbiosSnapshotReader {
     private final Executor enrichmentExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public AbiosEnrichedDocument loadRawSeries() {
-        if (abios.isMockEnabled()) {
+        if (abios.isV1MockEnabled()) {
             AbiosEnrichedDocument doc = gateway.readMock();
             List<AbiosRosterNode> mockRosters = gateway.readMockRosters();
             if (mockRosters != null && !mockRosters.isEmpty()) {

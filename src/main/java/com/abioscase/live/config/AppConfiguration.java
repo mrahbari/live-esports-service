@@ -24,7 +24,7 @@ import io.lettuce.core.cluster.RedisClusterClient;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 
 @Configuration
-@EnableConfigurationProperties({AbiosProperties.class, LiveDataProperties.class})
+@EnableConfigurationProperties({AbiosProperties.class, LiveDataProperties.class, PollingProperties.class, IngestionProperties.class})
 public class AppConfiguration {
 
     @Bean

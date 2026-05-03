@@ -13,7 +13,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "abios")
 public class AbiosProperties {
 
-    private boolean mockEnabled = true;
+    private boolean v1MockEnabled = true;
     @NotBlank
     private String baseUrl = "https://api.abiosgaming.com";
     @NotBlank
@@ -49,8 +49,13 @@ public class AbiosProperties {
     private long minIntervalMs = 0;
     private boolean logUpstreamPayload = false;
 
-    @AssertTrue(message = "ABIOS_API_KEY (abios.api-key) must not be blank when abios.mock-enabled=false")
+    /** Query string used by LiveSeriesWorker when polling live series. */
+    private String livePollingQuery = "filter=lifecycle<=live";
+    /** Query string used by UpcomingSeriesWorker when polling upcoming series. */
+    private String upcomingPollingQuery = "filter=lifecycle<=upcoming&ordering=start-asc";
+
+    @AssertTrue(message = "ABIOS_API_KEY (abios.api-key) must not be blank when abios.v1-mock-enabled=false")
     public boolean isApiKeyPresentForLiveMode() {
-        return mockEnabled || (apiKey != null && !apiKey.isBlank());
+        return v1MockEnabled || (apiKey != null && !apiKey.isBlank());
     }
 }

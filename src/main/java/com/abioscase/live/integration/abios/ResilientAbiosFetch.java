@@ -31,6 +31,13 @@ public class ResilientAbiosFetch {
     @Retry(name = "abios")
     @RateLimiter(name = "abiosOut")
     @CircuitBreaker(name = "abios")
+    public AbiosEnrichedDocument fetchSeriesWithQuery(int take, int skip, String queryOverride) {
+        return gateway.fetchSeriesWithQuery(take, skip, queryOverride);
+    }
+
+    @Retry(name = "abios")
+    @RateLimiter(name = "abiosOut")
+    @CircuitBreaker(name = "abios")
     public List<AbiosRosterNode> fetchRosters(Set<String> ids) {
         return gateway.fetchRosters(ids);
     }

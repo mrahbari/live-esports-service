@@ -51,10 +51,18 @@ public class AbiosDataGateway {
     }
 
     public AbiosEnrichedDocument fetchSeries(int take, int skip) {
-        log.info("Abios upstream request: GET {}?{} (take={}, skip={})", abios.getSeriesPath(), abios.getSeriesQuery(), take, skip);
+        return doFetchSeries(take, skip, abios.getSeriesQuery());
+    }
+
+    public AbiosEnrichedDocument fetchSeriesWithQuery(int take, int skip, String queryOverride) {
+        return doFetchSeries(take, skip, queryOverride);
+    }
+
+    private AbiosEnrichedDocument doFetchSeries(int take, int skip, String query) {
+        log.info("Abios upstream request: GET {}?{} (take={}, skip={})", abios.getSeriesPath(), query, take, skip);
 
         URI uri = UriComponentsBuilder.fromPath(abios.getSeriesPath())
-                .query(abios.getSeriesQuery())
+                .query(query)
                 .queryParam("take", take)
                 .queryParam("skip", skip)
                 .build()

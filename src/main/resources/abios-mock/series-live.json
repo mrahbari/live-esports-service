@@ -30,6 +30,40 @@
           "roster": { "id": "ros-301" }
         }
       ]
+    },
+    {
+      "id": "ser-3003",
+      "title": "[MOCK] Summer Invitational 2025 — Qualifier",
+      "game": { "name": "Dota 2" },
+      "lifecycle": "upcoming",
+      "start": "2026-05-10T14:00:00Z",
+      "tier": 2,
+      "best_of": 3,
+      "participants": [
+        {
+          "roster": { "id": "ros-201" }
+        },
+        {
+          "roster": { "id": "ros-202" }
+        }
+      ]
+    },
+    {
+      "id": "ser-4004",
+      "title": "[MOCK] Regional Championship — Group Stage",
+      "game": { "name": "Valorant" },
+      "lifecycle": "upcoming",
+      "start": "2026-05-12T18:00:00Z",
+      "tier": 1,
+      "best_of": 1,
+      "participants": [
+        {
+          "roster": { "id": "ros-401" }
+        },
+        {
+          "roster": { "id": "ros-402" }
+        }
+      ]
     }
   ]
 }

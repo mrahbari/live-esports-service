@@ -7,20 +7,46 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
       ABIOS_API_KEY: ${ABIOS_API_KEY:-}
-      # true = INFO logs raw Atlas /v3/series JSON (truncated) + parse-shape summary (see AbiosDataGateway)
-      ABIOS_LOG_UPSTREAM_PAYLOAD: ${ABIOS_LOG_UPSTREAM_PAYLOAD:-false}
+      LOG_UPSTREAM_PAYLOAD: ${LOG_UPSTREAM_PAYLOAD:-false}
       ABIOS_MOCK_FILE: /app/abios-mock/series-live.json
       REDIS_HOST: redis
       CACHE_MODE: ${CACHE_MODE:-memory}
-      # Optional smoke tuning (matches application.yml defaults if unset)
       APP_LIVE_CLIENT_RATE_LIMIT_PER_MINUTE: ${APP_LIVE_CLIENT_RATE_LIMIT_PER_MINUTE:-120}
       APP_LIVE_CLIENT_BURST_CAPACITY: ${APP_LIVE_CLIENT_BURST_CAPACITY:-120}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-esports}
+      POSTGRES_USER: ${POSTGRES_USER:-esports}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esports}
+      APP_POLLING_LIVE_INTERVAL_MS: ${APP_POLLING_LIVE_INTERVAL_MS:-3000}
+      APP_POLLING_UPCOMING_INTERVAL_MS: ${APP_POLLING_UPCOMING_INTERVAL_MS:-15000}
+      LOG_FILE: /app/logs/app.log
     volumes:
       - ./src/main/resources/abios-mock:/app/abios-mock:ro
+      - ./target/logs:/app/logs
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-esports}
+      POSTGRES_USER: ${POSTGRES_USER:-esports}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esports}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-esports} -d ${POSTGRES_DB:-esports}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -31,3 +57,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+volumes:
+  postgres_data:

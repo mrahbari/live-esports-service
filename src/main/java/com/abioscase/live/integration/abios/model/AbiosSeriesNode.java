@@ -59,6 +59,9 @@ public class AbiosSeriesNode {
     @JsonAlias("line_ups")
     private List<AbiosRosterNode.LineUp> lineups;
 
+    @JsonProperty("resource_version")
+    private Integer resourceVersion;
+
     public String displayName() {
         if (name != null && !name.isBlank()) {
             return name;
