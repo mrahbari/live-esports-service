@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class ResilientAbiosFetch {
+public class AbiosResilientFetch {
 
     private final AbiosDataGateway gateway;
 

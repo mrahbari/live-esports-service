@@ -2,6 +2,26 @@
 
 This document outlines the caching strategy implemented in the Live Esports Service to ensure high availability, low latency, and resilience against upstream API failures.
 
+## 0. Technical Approach: Snapshot Track (V1)
+
+The "Snapshot Track" is the architectural pattern used to manage live esports data. It aims to deliver a unified, enriched view of all active matches with near-zero latency.
+
+### Core Philosophy
+1.  **Stale-While-Revalidate:** Prioritize availability and speed by serving cached data (even if stale) while asynchronously refreshing it in the background.
+2.  **Parallel Enrichment:** Optimize the expensive upstream data collection process by parallelizing independent fetch operations.
+3.  **Proactive Warming:** Ensure the cache is never empty by fetching data during startup and maintaining it via scheduled jobs.
+
+### The 6-Phase Enrichment Pipeline
+Building a full `LiveSnapshot` involves a coordinated sequence of calls to the Abios Atlas API:
+1.  **Series Fetch:** Retrieves the base list of live series (Sequential).
+2.  **ID Extraction:** Processes metadata and extracts related IDs (In-memory).
+3.  **Rosters Fetch:** Discovers teams and active lineups (Sequential).
+4.  **Parallel Teams & Lineups:** Fetches detailed team and lineup data concurrently using **Java 21 Virtual Threads** (Saves ~20% wall-clock time).
+5.  **Players Fetch:** Retrieves individual player statistics (Sequential).
+6.  **Immutable Aggregation:** Merges all data into a thread-safe `LiveSnapshot` object.
+
+---
+
 ## 1. Core Strategy: Stale-While-Revalidate
 The system employs a "Stale-While-Revalidate" pattern. It prioritizes serving data from the cache, even if slightly expired, while triggering a background update to fetch fresh data.
 

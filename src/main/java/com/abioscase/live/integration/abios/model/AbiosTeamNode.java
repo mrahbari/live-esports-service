@@ -1,12 +1,14 @@
 package com.abioscase.live.integration.abios.model;
 
 import com.abioscase.live.integration.abios.jackson.CoerceToStringDeserializer;
+import com.abioscase.live.integration.abios.jackson.RosterDeserializer;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -32,12 +34,16 @@ public class AbiosTeamNode {
     @JsonAlias("lineup")
     private AbiosRosterNode.LineUp lineUp;
 
-    /** Atlas V3 participants often carry the team id here instead of on {@link #id}. */
+    /**
+     * Atlas V3 participants often carry the team id here instead of on {@link #id}.
+     */
     @JsonProperty("teamId")
     @JsonDeserialize(using = CoerceToStringDeserializer.class)
     private String teamId;
 
-    /** Nested team summary when participant is a slot wrapping {@code team: { id, name }}. */
+    /**
+     * Nested team summary when participant is a slot wrapping {@code team: { id, name }}.
+     */
     @JsonProperty("team")
     private TeamStub teamStub;
 
@@ -60,7 +66,9 @@ public class AbiosTeamNode {
         return null;
     }
 
-    /** Roster edge id from {@link #roster}, when the series payload only references a roster. */
+    /**
+     * Roster edge id from {@link #roster}, when the series payload only references a roster.
+     */
     public String rosterLinkId() {
         return roster != null && roster.getId() != null && !roster.getId().isBlank() ? roster.getId() : null;
     }
@@ -98,23 +106,4 @@ public class AbiosTeamNode {
         private List<AbiosPlayerNode> players;
     }
 
-    public static class RosterDeserializer extends com.fasterxml.jackson.databind.JsonDeserializer<Roster> {
-        @Override
-        public Roster deserialize(com.fasterxml.jackson.core.JsonParser p, com.fasterxml.jackson.databind.DeserializationContext ctxt)
-                throws java.io.IOException {
-            com.fasterxml.jackson.core.JsonToken t = p.currentToken();
-            if (t == com.fasterxml.jackson.core.JsonToken.START_ARRAY) {
-                java.util.List<AbiosPlayerNode> list = ctxt.readValue(p,
-                        ctxt.getTypeFactory().constructCollectionType(java.util.List.class, AbiosPlayerNode.class));
-                Roster r = new Roster();
-                r.setPlayers(list);
-                return r;
-            } else if (t == com.fasterxml.jackson.core.JsonToken.START_OBJECT) {
-                return ctxt.readValue(p, Roster.class);
-            } else if (t != com.fasterxml.jackson.core.JsonToken.VALUE_NULL) {
-                p.skipChildren();
-            }
-            return null;
-        }
-    }
 }

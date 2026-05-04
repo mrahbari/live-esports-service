@@ -13,6 +13,7 @@ import lombok.Data;
 public class AbiosEnrichedDocument {
     @JsonProperty("series")
     private List<AbiosSeriesNode> series;
+
     @JsonProperty("data")
     private List<AbiosSeriesNode> data;
 
@@ -20,6 +21,7 @@ public class AbiosEnrichedDocument {
     private List<AbiosRosterNode> rosters;
 
     private List<AbiosTeamNode> teamsEnriched;
+
     private List<AbiosPlayerNode> playersEnriched;
 
     private Map<String, Integer> atlasCalls = new ConcurrentHashMap<>();

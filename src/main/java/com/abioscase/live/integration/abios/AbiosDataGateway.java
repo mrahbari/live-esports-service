@@ -29,7 +29,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- * Unprotected HTTP and classpath mock — Resilience4j decorators live in {@link ResilientAbiosFetch} only.
+ * Unprotected HTTP and classpath mock — Resilience4j decorators live in {@link AbiosResilientFetch} only.
  */
 @Slf4j
 @Component

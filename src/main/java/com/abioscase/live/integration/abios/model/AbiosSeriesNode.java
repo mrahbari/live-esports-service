@@ -24,18 +24,6 @@ public class AbiosSeriesNode {
     @JsonProperty("game")
     private Game game;
 
-    public String getGameName() {
-        if (gameName != null && !gameName.isBlank()) return gameName;
-        return game != null ? game.getName() : null;
-    }
-
-    @Data
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Game {
-        @JsonProperty("name")
-        private String name;
-    }
-
     @JsonProperty("state")
     @JsonAlias({"lifecycle", "status"})
     private String state;
@@ -61,6 +49,18 @@ public class AbiosSeriesNode {
 
     @JsonProperty("resource_version")
     private Integer resourceVersion;
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Game {
+        @JsonProperty("name")
+        private String name;
+    }
+
+    public String getGameName() {
+        if (gameName != null && !gameName.isBlank()) return gameName;
+        return game != null ? game.getName() : null;
+    }
 
     public String displayName() {
         if (name != null && !name.isBlank()) {

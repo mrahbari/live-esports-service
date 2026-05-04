@@ -25,7 +25,7 @@ public class AbiosSnapshotReader {
 
     private final AbiosProperties abios;
     private final AbiosDataGateway gateway;
-    private final ResilientAbiosFetch resilient;
+    private final AbiosResilientFetch resilient;
 
     // One virtual thread per enrichment task — cheap for I/O-bound Atlas calls.
     private final Executor enrichmentExecutor = Executors.newVirtualThreadPerTaskExecutor();

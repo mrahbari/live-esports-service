@@ -2,7 +2,7 @@ package com.abioscase.live.livedata.db.ingestion;
 
 import com.abioscase.live.config.AbiosProperties;
 import com.abioscase.live.config.IngestionProperties;
-import com.abioscase.live.integration.abios.ResilientAbiosFetch;
+import com.abioscase.live.integration.abios.AbiosResilientFetch;
 import com.abioscase.live.integration.abios.model.*;
 import com.abioscase.live.livedata.db.repository.JdbcLiveRepository;
 import com.abioscase.live.livedata.polling.SeriesWindowFilter;
@@ -27,7 +27,7 @@ public class StreamingIngestionPipeline {
 
     private final AbiosProperties abios;
     private final IngestionProperties ingestion;
-    private final ResilientAbiosFetch resilient;
+    private final AbiosResilientFetch resilient;
     private final JdbcLiveRepository repository;
 
     private final Executor enrichExecutor = Executors.newVirtualThreadPerTaskExecutor();

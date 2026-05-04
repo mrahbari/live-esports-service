@@ -3,7 +3,7 @@ package com.abioscase.live.livedata.polling;
 import com.abioscase.live.config.AbiosProperties;
 import com.abioscase.live.config.IngestionProperties;
 import com.abioscase.live.config.PollingProperties;
-import com.abioscase.live.integration.abios.ResilientAbiosFetch;
+import com.abioscase.live.integration.abios.AbiosResilientFetch;
 import com.abioscase.live.integration.abios.model.AbiosSeriesNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class UpcomingSeriesWorker {
     private final AbiosProperties abios;
     private final PollingProperties polling;
     private final IngestionProperties ingestion;
-    private final ResilientAbiosFetch resilient;
+    private final AbiosResilientFetch resilient;
     private final PollingSeriesRepository repo;
     private final Semaphore pollingApiSemaphore;
 
