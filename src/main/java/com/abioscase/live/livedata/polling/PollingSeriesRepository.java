@@ -1,6 +1,6 @@
 package com.abioscase.live.livedata.polling;
 
-import com.abioscase.live.livedata.web.dto.SeriesRow;
+import com.abioscase.live.livedata.web.dto.SeriesItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -69,10 +69,10 @@ public class PollingSeriesRepository {
                 """;
         }
 
-        List<SeriesRow> rows = jdbc.query(sql, params, (rs, n) -> {
+        List<SeriesItem> rows = jdbc.query(sql, params, (rs, n) -> {
             Timestamp startTs   = rs.getTimestamp("started_at");
             Timestamp updatedTs = rs.getTimestamp("updated_at");
-            return new SeriesRow(
+            return new SeriesItem(
                     rs.getString("id"),
                     rs.getString("state"),
                     startTs   != null ? startTs.toInstant()   : null,
@@ -81,7 +81,7 @@ public class PollingSeriesRepository {
         });
 
         boolean hasMore = rows.size() > limit;
-        List<SeriesRow> page = hasMore ? rows.subList(0, limit) : rows;
+        List<SeriesItem> page = hasMore ? rows.subList(0, limit) : rows;
         String nextCursor = hasMore ? page.get(page.size() - 1).id() : null;
 
         return new PageResult(page, nextCursor, hasMore);
@@ -92,5 +92,5 @@ public class PollingSeriesRepository {
         return Math.min(limit, MAX_LIMIT);
     }
 
-    public record PageResult(List<SeriesRow> items, String nextCursor, boolean hasMore) {}
+    public record PageResult(List<SeriesItem> items, String nextCursor, boolean hasMore) {}
 }

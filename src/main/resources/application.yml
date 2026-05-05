@@ -168,9 +168,9 @@ logging:
     # V1 (cache-backed): set LOG_V1_LEVEL=DEBUG|WARN|OFF to isolate stream path logs
     com.abioscase.live.livedata.application: ${LOG_V1_LEVEL:INFO}
     com.abioscase.live.livedata.cache: ${LOG_V1_LEVEL:INFO}
-    com.abioscase.live.livedata.web.rest.LiveDataController: ${LOG_V1_LEVEL:INFO}
+    com.abioscase.live.livedata.web.rest.SnapshotController: ${LOG_V1_LEVEL:INFO}
     # V2 (db-backed polling): set LOG_V2_LEVEL=DEBUG|WARN|OFF to isolate polling/ingestion logs
     com.abioscase.live.livedata.db: ${LOG_V2_LEVEL:INFO}
     com.abioscase.live.livedata.polling: ${LOG_V2_LEVEL:INFO}
-    com.abioscase.live.livedata.web.rest.SeriesPollingController: ${LOG_V2_LEVEL:INFO}
+    com.abioscase.live.livedata.web.rest.PollingController: ${LOG_V2_LEVEL:INFO}
     com.abioscase.live.upstream: DEBUG

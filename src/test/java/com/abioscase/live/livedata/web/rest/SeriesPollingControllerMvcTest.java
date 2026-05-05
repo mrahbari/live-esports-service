@@ -14,7 +14,7 @@ import com.abioscase.live.livedata.polling.PollingSeriesRepository;
 import com.abioscase.live.livedata.web.dto.LivePlayerItem;
 import com.abioscase.live.livedata.web.dto.LiveSeriesItem;
 import com.abioscase.live.livedata.web.dto.LiveTeamItem;
-import com.abioscase.live.livedata.web.dto.SeriesRow;
+import com.abioscase.live.livedata.web.dto.SeriesItem;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -88,8 +88,8 @@ class SeriesPollingControllerMvcTest {
         Instant start   = Instant.parse("2026-05-10T14:00:00Z");
         Instant updated = Instant.parse("2026-05-03T12:00:00Z");
         var rows = List.of(
-                new SeriesRow("101", "upcoming", start, updated),
-                new SeriesRow("202", "upcoming", start.plusSeconds(3600), updated)
+                new SeriesItem("101", "upcoming", start, updated),
+                new SeriesItem("202", "upcoming", start.plusSeconds(3600), updated)
         );
         when(pollingRepo.getByState(eq("upcoming"), isNull(), eq(50)))
                 .thenReturn(new PollingSeriesRepository.PageResult(rows, "202", true));

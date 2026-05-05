@@ -9,7 +9,7 @@ public final class SeriesWindowFilter {
 
     /**
      * Strict window: both lower and upper bounds are enforced.
-     * Used for upcoming series (task2 §5: strict filtering by window).
+     * Used for upcoming series.
      */
     public static boolean isWithinWindowStrict(Instant startTime, Instant now, int windowDays) {
         if (startTime == null) return true;
@@ -20,7 +20,7 @@ public final class SeriesWindowFilter {
 
     /**
      * Lenient window: only the upper bound is enforced.
-     * Used for live series — already started, so lower bound is irrelevant (task2 §5).
+     * Used for live series — already started, so lower bound is irrelevant.
      */
     public static boolean isWithinWindowLive(Instant startTime, Instant now, int windowDays) {
         if (startTime == null) return true;

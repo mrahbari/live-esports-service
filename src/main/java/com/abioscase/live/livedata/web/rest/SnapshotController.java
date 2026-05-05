@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Live Data (V1)", description = "Real-time esports series, teams, and players — cache-backed, low-latency.")
+@Tag(name = "Snapshot (V1)", description = "Real-time esports series, teams, and players — cache-backed, low-latency.")
 @RestController
 @RequestMapping("/v1")
 @RequiredArgsConstructor
-public class LiveDataController {
+public class SnapshotController {
 
     private final LiveDataService liveDataService;
 

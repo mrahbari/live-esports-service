@@ -5,9 +5,8 @@ import com.abioscase.live.livedata.polling.PollingSeriesRepository;
 import com.abioscase.live.livedata.web.dto.LivePlayerItem;
 import com.abioscase.live.livedata.web.dto.LiveSeriesItem;
 import com.abioscase.live.livedata.web.dto.LiveTeamItem;
-import com.abioscase.live.livedata.web.dto.SeriesRow;
+import com.abioscase.live.livedata.web.dto.SeriesItem;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Series Polling (V2)", description = "Database-backed scalable endpoints — cursor paginated, powered by PostgreSQL")
+@Tag(name = "Polling (V2)", description = "Database-backed scalable endpoints — cursor paginated, powered by PostgreSQL")
 @RestController
 @RequestMapping("/v2")
 @RequiredArgsConstructor
-public class SeriesPollingController {
+public class PollingController {
 
     private final PollingSeriesRepository pollingRepo;
     private final DbLiveDataService dbService;
@@ -43,7 +42,7 @@ public class SeriesPollingController {
         description = "Returns near-future upcoming series IDs from the polling pipeline. Filtered by window-days."
     )
     @GetMapping("/series/upcoming")
-    public V2Page<SeriesRow> getUpcomingSeries(
+    public V2Page<SeriesItem> getUpcomingSeries(
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "50") int take) {
         PollingSeriesRepository.PageResult result = pollingRepo.getByState("upcoming", cursor, take);

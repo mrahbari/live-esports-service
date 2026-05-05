@@ -2,7 +2,7 @@ package com.abioscase.live.livedata.web.dto;
 
 import java.time.Instant;
 
-public record SeriesRow(
+public record SeriesItem(
         String id,
         String state,
         Instant startTime,

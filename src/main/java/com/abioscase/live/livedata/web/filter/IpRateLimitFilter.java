@@ -60,12 +60,19 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Limit only public live data endpoints (v1 and non-v1, with and without /live suffix)
-        boolean isSeries = path.equals("/v1/series") || path.equals("/series/live") || path.equals("/v1/series/live");
-        boolean isPlayers = path.equals("/v1/players") || path.equals("/players/live") || path.equals("/v1/players/live");
-        boolean isTeams = path.equals("/v1/teams") || path.equals("/teams/live") || path.equals("/v1/teams/live");
-        
-        return !(isSeries || isPlayers || isTeams);
+        // Limit only public live data endpoints
+        // V1 endpoints
+        boolean isV1Series = path.equals("/v1/series") || path.equals("/series/live") || path.equals("/v1/series/live");
+        boolean isV1Players = path.equals("/v1/players") || path.equals("/players/live") ||
+                path.equals("/v1/players/live");
+        boolean isV1Teams = path.equals("/v1/teams") || path.equals("/teams/live") || path.equals("/v1/teams/live");
+
+        // V2 endpoints
+        boolean isV2Series = path.equals("/v2/series/live") || path.equals("/v2/series/upcoming");
+        boolean isV2Players = path.equals("/v2/players/live");
+        boolean isV2Teams = path.equals("/v2/teams/live");
+
+        return !(isV1Series || isV1Players || isV1Teams || isV2Series || isV2Players || isV2Teams);
     }
 
     @Override
