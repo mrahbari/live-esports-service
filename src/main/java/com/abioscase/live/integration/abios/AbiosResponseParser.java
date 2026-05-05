@@ -32,8 +32,7 @@ public class AbiosResponseParser {
         JsonNode root = objectMapper.readTree(payload);
         AbiosEnrichedDocument doc;
         if (root.isArray()) {
-            List<AbiosSeriesNode> list = objectMapper.convertValue(root, new TypeReference<List<AbiosSeriesNode>>() {
-            });
+            List<AbiosSeriesNode> list = objectMapper.convertValue(root, new TypeReference<>() {});
             doc = new AbiosEnrichedDocument();
             doc.setSeries(list);
         } else {

@@ -127,10 +127,20 @@ public class JdbcLiveRepository {
 
     // ── QUERIES ──────────────────────────────────────────────────────────────────
 
-    public Map<String, Integer> loadResourceVersions() {
-        Map<String, Integer> map = new LinkedHashMap<>();
-        jdbc.query("SELECT id, resource_version FROM live_series",
-                (RowCallbackHandler) rs -> map.put(rs.getString("id"), rs.getObject("resource_version", Integer.class)));
+    /**
+     * Fetches resource_versions for a specific set of IDs.
+     * Used for batch delta-checks during ingestion to avoid OOM with large datasets.
+     */
+    public Map<String, Integer> findResourceVersions(Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Integer> map = new HashMap<>();
+        jdbc.query("SELECT id, resource_version FROM live_series WHERE id IN (:ids)",
+                Map.of("ids", ids),
+                rs -> {
+                    map.put(rs.getString("id"), rs.getObject("resource_version", Integer.class));
+                });
         return map;
     }
 
@@ -175,16 +185,16 @@ public class JdbcLiveRepository {
         String sql;
         if (cursor != null && !cursor.isBlank()) {
             sql = """
-                SELECT id, name, abbreviation, player_count, series_ids FROM live_teams
-                WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+                SELECT id, name, abbreviation, player_count, series_ids FROM live_teams t
+                WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(t.series_ids) AND s.state = ANY(:states))
                 AND id > :cursor
                 ORDER BY id ASC LIMIT :limit
                 """;
             params.put("cursor", cursor);
         } else {
             sql = """
-                SELECT id, name, abbreviation, player_count, series_ids FROM live_teams
-                WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+                SELECT id, name, abbreviation, player_count, series_ids FROM live_teams t
+                WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(t.series_ids) AND s.state = ANY(:states))
                 ORDER BY id ASC LIMIT :limit
                 """;
         }
@@ -196,8 +206,8 @@ public class JdbcLiveRepository {
 
     public long countLiveTeamsByState(Set<String> states) {
         return jdbc.queryForObject("""
-            SELECT COUNT(*) FROM live_teams
-            WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+            SELECT COUNT(*) FROM live_teams t
+            WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(t.series_ids) AND s.state = ANY(:states))
             """, Map.of("states", states.toArray(new String[0])), Long.class);
     }
 
@@ -209,16 +219,16 @@ public class JdbcLiveRepository {
         String sql;
         if (cursor != null && !cursor.isBlank()) {
             sql = """
-                SELECT id, nickname, first_name, last_name, role, team_id, team_name, series_ids FROM live_players
-                WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+                SELECT id, nickname, first_name, last_name, role, team_id, team_name, series_ids FROM live_players p
+                WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(p.series_ids) AND s.state = ANY(:states))
                 AND id > :cursor
                 ORDER BY id ASC LIMIT :limit
                 """;
             params.put("cursor", cursor);
         } else {
             sql = """
-                SELECT id, nickname, first_name, last_name, role, team_id, team_name, series_ids FROM live_players
-                WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+                SELECT id, nickname, first_name, last_name, role, team_id, team_name, series_ids FROM live_players p
+                WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(p.series_ids) AND s.state = ANY(:states))
                 ORDER BY id ASC LIMIT :limit
                 """;
         }
@@ -232,8 +242,8 @@ public class JdbcLiveRepository {
 
     public long countLivePlayersByState(Set<String> states) {
         return jdbc.queryForObject("""
-            SELECT COUNT(*) FROM live_players
-            WHERE series_ids && COALESCE((SELECT array_agg(id::TEXT) FROM live_series WHERE state = ANY(:states)), '{}'::TEXT[])
+            SELECT COUNT(*) FROM live_players p
+            WHERE EXISTS (SELECT 1 FROM live_series s WHERE s.id = ANY(p.series_ids) AND s.state = ANY(:states))
             """, Map.of("states", states.toArray(new String[0])), Long.class);
     }
 

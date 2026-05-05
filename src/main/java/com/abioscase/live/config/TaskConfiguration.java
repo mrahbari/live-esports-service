@@ -9,6 +9,18 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 
+/**
+ * Central wiring for asynchronous work, scheduled polling, and outbound API concurrency.
+ *
+ * Background execution: exposes {@code cacheRefreshExecutor}, a bounded thread pool used for async cache
+ * refresh and similar fire-and-forget work.
+ *
+ * Scheduling: exposes {@code taskScheduler}, a dedicated pool for polling workers (e.g. live/upcoming series)
+ * so periodic tasks do not compete with ad-hoc async jobs.
+ *
+ * Upstream pressure control: exposes a fair {@link Semaphore} shared across polling workers to cap concurrent
+ * outbound Abios calls according to {@link PollingProperties}.
+ */
 @Configuration
 public class TaskConfiguration {
 
@@ -18,7 +30,7 @@ public class TaskConfiguration {
         int processors = Runtime.getRuntime().availableProcessors();
         executor.setCorePoolSize(processors * 2);
         executor.setMaxPoolSize(processors * 4);
-        executor.setQueueCapacity(50);
+        executor.setQueueCapacity(50);  // If all threads are busy, up to 50 tasks will remain in the queue.
         executor.setThreadNamePrefix("cache-refresh-");
         executor.initialize();
         return executor;

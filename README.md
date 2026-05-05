@@ -98,6 +98,8 @@ Instead of loading full JSON trees into memory, the ingestion engine uses **Jack
 | `./scripts/stop.sh` | Gracefully tear down the Docker stack. |
 | `./scripts/test.sh` | Execute full test suite (Unit + Integration). |
 | `./scripts/run-smoke-tests.sh` | Verifies health, rate-limits, and core endpoints. |
+| `./scripts/run-snapshot.sh` | Runs only Scenario A (V1 Snapshot Track). |
+| `./scripts/run-polling.sh` | Runs only Scenario B (V2 Polling Track). |
 
 ---
 

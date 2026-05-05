@@ -9,6 +9,7 @@ import com.abioscase.live.livedata.polling.SeriesWindowFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
@@ -32,6 +33,7 @@ public class StreamingIngestionPipeline {
 
     private final Executor enrichExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
+    @Transactional
     public void runIngestion() {
         Instant cycleStart = Instant.now();
         log.info("Starting ingestion cycle at {}", cycleStart);
@@ -44,9 +46,6 @@ public class StreamingIngestionPipeline {
     }
 
     private void runStreamingIngestion(Instant cycleStart) {
-        // Pre-load stored resource_versions — skip team/player enrichment for unchanged series.
-        Map<String, Integer> storedVersions = repository.loadResourceVersions();
-
         Map<String, Set<String>> teamSeries   = new LinkedHashMap<>();
         Map<String, Set<String>> playerSeries = new LinkedHashMap<>();
         Map<String, Set<String>> teamPlayers  = new LinkedHashMap<>();
@@ -59,6 +58,10 @@ public class StreamingIngestionPipeline {
             AbiosEnrichedDocument pageDoc = resilient.fetchSeriesWithQuery(take, skip, abios.getLivePollingQuery());
             List<AbiosSeriesNode> page = pageDoc.allSeries();
             if (page == null || page.isEmpty()) break;
+
+            // Batch-fetch resource versions for this page to decide which series need enrichment.
+            List<String> pageIds = page.stream().map(AbiosSeriesNode::getId).filter(Objects::nonNull).toList();
+            Map<String, Integer> storedVersions = repository.findResourceVersions(pageIds);
 
             for (AbiosSeriesNode s : page) {
                 if (s.getId() == null) continue;

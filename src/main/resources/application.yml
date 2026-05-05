@@ -86,7 +86,7 @@ resilience4j:
   ratelimiter:
     instances:
       abiosOut:
-        limit-for-period: 30
+        limit-for-period: 30  # 30 requests per minute
         limit-refresh-period: 1m
         timeout-duration: 0s
       publicIn:
